@@ -13,10 +13,11 @@ A **Domain Status Checker** library provides a fast, reliable way to determine w
 
 To achieve both speed and accuracy under varying environments (Node.js vs browser), the library:
 
-1. **Probes** DNS via `host` and/or DNS-over-HTTPS (DOH) in parallel.
-2. **Falls back** through RDAP → WHOIS library → paid WHOIS API.
-3. **Normalizes** every response to a uniform interface.
-4. **Caches**, **logs**, and **tests** extensively for production readiness.
+1. **Tier&nbsp;1 – DNS**: probe via `host` and/or DNS-over-HTTPS (DOH) in parallel.
+2. **Tier&nbsp;2 – RDAP**, when available.
+3. **Tier&nbsp;3 – WHOIS**: local WHOIS library followed by a paid WHOIS API.
+4. **Normalizes** every response to a uniform interface.
+5. **Caches**, **logs**, and **tests** extensively for production readiness.
 
 ---
 
@@ -25,9 +26,9 @@ To achieve both speed and accuracy under varying environments (Node.js vs browse
 ### 2.1 Functional Requirements
 
 * **Fast “first-good-win”** DNS probing (cancel slower probes once a record is found).
-* **Fallback ladder**: RDAP → local WHOIS library → remote WHOIS API.
+* **Three-tier fallback**: DNS (host/DOH) → RDAP → WHOIS library/WHOIS API.
 * **Uniform result shape** for all sources.
-* **Per-TLD overrides**, e.g. custom RDAP servers.
+* **Per-TLD overrides**, e.g. custom RDAP servers or skipping RDAP entirely.
 * **Environment detection**: Node.js gets CLI & libraries; browser uses DOH & APIs.
 * **Batch mode**: concurrent checks with configurable concurrency limit.
 * **Extended statuses**: `expiring_soon`, `premium`, `for_sale`, etc.
@@ -126,6 +127,16 @@ export interface Logger {
 }
 ```
 
+### 4.4 `TldConfigEntry`
+
+```ts
+export interface TldConfigEntry {
+  rdapServer?: string;
+  /** If true, skip RDAP and go straight to WHOIS */
+  skipRdap?: boolean;
+}
+```
+
 ---
 
 ## 5. Module Breakdown & APIs
@@ -140,7 +151,7 @@ export interface Logger {
  │    ├─ rdapAdapter.ts
  │    ├─ whoisLibAdapter.ts
  │    └─ whoisApiAdapter.ts
- ├─ tldConfig.ts        # { [tld]: { rdapServer?: string } }
+ ├─ tldConfig.ts        # { [tld]: { rdapServer?: string; skipRdap?: boolean } }
  ├─ env.ts              # detects Node vs Browser, exports available adapters
  ├─ cache/
  │    └─ inMemoryCache.ts
@@ -191,8 +202,8 @@ export function configure(opts: {
    * On positive record → mark `unavailable`, abort others.
 4. **Fallback Ladder:**
 
-   * RDAP → if still `unknown`,
-   * WHOIS library→ if still `unknown`,
+   * RDAP (unless `skipRdap` is set) → if still `unknown`,
+   * WHOIS library → if still `unknown`,
    * WHOIS API (last resort).
 5. **Normalize** raw response → `DomainStatus`.
 6. **Cache** result with TTL (e.g. 1h for unavailable, 5min for available).
@@ -265,7 +276,7 @@ flow.
 * **Timeouts** on all network calls (configurable, e.g. 3 s for DNS, 5 s for RDAP).
 * **Retries**: simple exponential backoff for RDAP and WHOIS API (max 2 retries).
 * **AbortController** support to cancel in-flight race participants.
-* **Graceful degradation**: if RDAP fails, still attempt WHOIS library & API.
+* **Graceful degradation**: if RDAP fails or is skipped, still attempt WHOIS library & API.
 
 ---
 
