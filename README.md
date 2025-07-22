@@ -244,23 +244,19 @@ logger.info('domain.check.end',  { domain, status, source });
 
 ## 9. Testing Strategy
 
-1. **Unit Tests** (Jest/Mocha):
+Use a short, curated list of domains with known status and make real network
+calls. No mocks or stub servers are involved. Each test invokes the library
+against the list and verifies the returned `DomainStatus` matches expectations.
 
-   * Adapters: mock network/CLI calls, assert normalization.
-   * Cache: TTL, eviction.
-   * Orchestrator: simulate race wins & fallbacks via fake adapters.
-2. **Integration Tests**:
+Example list:
 
-   * Point adapters at stub HTTP servers (nock) for DOH, RDAP, WHOIS API.
-   * Simulate NXDOMAIN, timeouts, valid records.
-3. **Performance Tests**:
+* `example.com` – unavailable
+* `iana.org` – unavailable
+* `this-domain-should-not-exist-12345.com` – available
+* `invalid@domain` – unsupported
 
-   * Benchmark single vs batch runs.
-   * Ensure DNS race cancels redundant calls.
-4. **Edge Cases**:
-
-   * Invalid domains, unsupported TLDs.
-   * Network errors & retries.
+Running the library on this set provides a simple end-to-end check of the core
+flow.
 
 ---
 
