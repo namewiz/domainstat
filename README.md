@@ -1,0 +1,305 @@
+# Domain Status Checker Library — Design Document
+
+---
+
+## 1. Overview & Motivation
+
+A **Domain Status Checker** library provides a fast, reliable way to determine whether a given domain name is:
+
+* **Available** for registration
+* **Unavailable** (already registered)
+* **Unsupported** (invalid syntax or unsupported TLD)
+* **Fine-status** variants (expiring soon, premium, reserved, etc.)
+
+To achieve both speed and accuracy under varying environments (Node.js vs browser), the library:
+
+1. **Probes** DNS via `host` and/or DNS-over-HTTPS (DOH) in parallel.
+2. **Falls back** through RDAP → WHOIS library → paid WHOIS API.
+3. **Normalizes** every response to a uniform interface.
+4. **Caches**, **logs**, and **tests** extensively for production readiness.
+
+---
+
+## 2. Requirements & Features
+
+### 2.1 Functional Requirements
+
+* **Fast “first-good-win”** DNS probing (cancel slower probes once a record is found).
+* **Fallback ladder**: RDAP → local WHOIS library → remote WHOIS API.
+* **Uniform result shape** for all sources.
+* **Per-TLD overrides**, e.g. custom RDAP servers.
+* **Environment detection**: Node.js gets CLI & libraries; browser uses DOH & APIs.
+* **Batch mode**: concurrent checks with configurable concurrency limit.
+* **Extended statuses**: `expiring_soon`, `premium`, `for_sale`, etc.
+
+### 2.2 Non-Functional Requirements
+
+* **Caching** with TTLs to reduce repeated network calls.
+* **Structured logging** of probes, fallbacks, latencies, errors.
+* **Comprehensive testing**: unit, integration, performance.
+* **Pluggable adapters**: easy to add new WHOIS or DNS providers.
+* **Zero external dependencies** beyond HTTP/DNS libraries.
+
+---
+
+## 3. High-Level Architecture
+
+```text
+┌─────────────────────────┐
+│      Public API        │
+│  check(domain)         │
+│  checkBatch(domains)   │
+└────────┬────────────────┘
+         │
+         ▼
+┌─────────────────────────┐
+│  Orchestrator / Runner │
+│  - DNS race            │
+│  - Fallback ladder     │
+│  - Normalizer          │
+└────────┬────────────────┘
+         │
+         ▼
+┌────────────────────────────────────────────────────────┐
+│  Adapters & Utilities                                │
+│  • hostAdapter    (Node only)                        │
+│  • dohAdapter     (Node+Browser)                     │
+│  • rdapAdapter    (per-TLD config)                   │
+│  • whoisLibAdapter(Node only)                        │
+│  • whoisApiAdapter (remote HTTP)                     │
+│  • cacheLayer                                        │
+│  • loggingLayer                                      │
+└────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 4. Core Interfaces & Data Models
+
+### 4.1 `DomainStatus`
+
+```ts
+export interface DomainStatus {
+  domain:        string;
+  availability:  'available' | 'unavailable' | 'unsupported';
+  fineStatus?:   'expiring_soon'
+               | 'registered_not_in_use'
+               | 'premium'
+               | 'for_sale'
+               | 'reserved';
+  source:        'host' | 'doh' | 'rdap' | 'whois-lib' | 'whois-api';
+  raw:           any;       // raw adapter response
+  timestamp:     number;    // Date.now()
+}
+```
+
+### 4.2 `CheckerAdapter`
+
+```ts
+export interface CheckerAdapter {
+  /**
+   * Checks a domain; respects AbortSignal for cancellation.
+   */
+  check(
+    domain: string,
+    opts?: {  
+      signal?: AbortSignal,
+      tldConfig?: TldConfigEntry
+    }
+  ): Promise<DomainStatus>;
+}
+```
+
+### 4.3 `Cache` & `Logger`
+
+```ts
+export interface Cache {
+  get<T>(key: string): T | undefined;
+  set<T>(key: string, value: T, ttlMs: number): void;
+}
+
+export interface Logger {
+  info(msg: string, meta?: object): void;
+  warn(msg: string, meta?: object): void;
+  error(msg: string, meta?: object): void;
+  debug(msg: string, meta?: object): void;
+}
+```
+
+---
+
+## 5. Module Breakdown & APIs
+
+```
+/src
+ ├─ index.ts            # exports public API
+ ├─ orchestrator.ts     # implements check(), checkBatch()
+ ├─ adapters/
+ │    ├─ hostAdapter.ts
+ │    ├─ dohAdapter.ts
+ │    ├─ rdapAdapter.ts
+ │    ├─ whoisLibAdapter.ts
+ │    └─ whoisApiAdapter.ts
+ ├─ tldConfig.ts        # { [tld]: { rdapServer?: string } }
+ ├─ env.ts              # detects Node vs Browser, exports available adapters
+ ├─ cache/
+ │    └─ inMemoryCache.ts
+ ├─ logging/
+ │    └─ defaultLogger.ts
+ ├─ tests/              # unit & integration tests
+ └─ types.ts            # shared interfaces & enums
+```
+
+### 5.1 Public API (`index.ts`)
+
+```ts
+import { check, checkBatch } from './orchestrator';
+import { configure } from './config';
+
+export {
+  check,
+  checkBatch,
+  configure,  // allow injecting custom cache, logger, adapters
+  DomainStatus,
+};
+```
+
+### 5.2 Configuration (`config.ts`)
+
+```ts
+export function configure(opts: {
+  cache?: Cache;
+  logger?: Logger;
+  concurrency?: number;
+  dohUrls?: string[];
+  whoisApiKey?: string;
+}) { … }
+```
+
+---
+
+## 6. Execution Flow
+
+### 6.1 Single-Domain `check(domain: string)`
+
+1. **Sanitize & parse** domain; immediately return `unsupported` if syntax/TLD invalid.
+2. **Cache lookup**: if recent entry exists, return it.
+3. **DNS Probe (parallel race):**
+
+   * Launch `hostAdapter` (Node), plus one or more `dohAdapter`s.
+   * Use `Promise.race()` to pick first responder.
+   * On positive record → mark `unavailable`, abort others.
+4. **Fallback Ladder:**
+
+   * RDAP → if still `unknown`,
+   * WHOIS library→ if still `unknown`,
+   * WHOIS API (last resort).
+5. **Normalize** raw response → `DomainStatus`.
+6. **Cache** result with TTL (e.g. 1h for unavailable, 5min for available).
+7. **Log**: adapter used, latency, outcome, errors.
+8. **Return** the `DomainStatus` promise.
+
+### 6.2 Batch Mode `checkBatch(domains: string[], concurrency)`
+
+* Use a **promise-pool** (e.g. p-limit) to run up to `concurrency` checks in parallel.
+* Aggregate results in input order → `DomainStatus[]`.
+
+---
+
+## 7. Caching Strategy
+
+* **Pluggable** via `Cache` interface; default = in-memory LRU.
+* **Key**: `domain.toLowerCase()`
+* **TTL**:
+
+  * `available`: 5 minutes
+  * `unavailable`: 1 hour
+  * `unsupported`: never cached (or very short)
+* **Eviction**: LRU with max size (e.g. 10k entries).
+
+---
+
+## 8. Logging Strategy
+
+* **Structured logs** with JSON metadata.
+* **Events to log**:
+
+  * Probe start/end (method, latency)
+  * Fallback transitions
+  * Cache hit/miss
+  * Errors and retries
+* **Levels**:
+
+  * `info`: high-level flow (cache hits, final status)
+  * `debug`: per-adapter details
+  * `warn`/`error`: timeouts, adapter failures
+
+```js
+logger.info('domain.check.start', { domain });
+logger.debug('adapter.response', { domain, adapter, latency, raw });
+logger.info('domain.check.end',  { domain, status, source });
+```
+
+---
+
+## 9. Testing Strategy
+
+1. **Unit Tests** (Jest/Mocha):
+
+   * Adapters: mock network/CLI calls, assert normalization.
+   * Cache: TTL, eviction.
+   * Orchestrator: simulate race wins & fallbacks via fake adapters.
+2. **Integration Tests**:
+
+   * Point adapters at stub HTTP servers (nock) for DOH, RDAP, WHOIS API.
+   * Simulate NXDOMAIN, timeouts, valid records.
+3. **Performance Tests**:
+
+   * Benchmark single vs batch runs.
+   * Ensure DNS race cancels redundant calls.
+4. **Edge Cases**:
+
+   * Invalid domains, unsupported TLDs.
+   * Network errors & retries.
+
+---
+
+## 10. Error Handling & Retries
+
+* **Timeouts** on all network calls (configurable, e.g. 3 s for DNS, 5 s for RDAP).
+* **Retries**: simple exponential backoff for RDAP and WHOIS API (max 2 retries).
+* **AbortController** support to cancel in-flight race participants.
+* **Graceful degradation**: if RDAP fails, still attempt WHOIS library & API.
+
+---
+
+## 11. Scalability & Deployment
+
+* **Library** can be used in-process or wrapped in a microservice (Docker + HTTP endpoint).
+* **Batch queue**: integrate with job queue (e.g. BullMQ) for massive domain lists.
+* **Metrics**: expose Prometheus counters/gauges for total checks, errors, latencies.
+
+---
+
+## 12. Alternatives & Trade-Offs
+
+| Strategy                   | Pros                          | Cons                         |
+| -------------------------- | ----------------------------- | ---------------------------- |
+| Full parallel of all       | Fastest overall               | High resource & API-costs    |
+| Strict sequential fallback | Minimal external calls        | Slow “cold” available checks |
+| Bloom-filter caching       | Instant rejects for known set | Risk of false positives      |
+
+Our design balances **speed** (DNS race) and **cost** (deferred paid API), while ensuring **extensibility** and **observability**.
+
+---
+
+## 13. Conclusion
+
+This design document lays out:
+
+* **Clear interfaces** and data models
+* **Module decomposition** for adapters, caching, and logging
+* **Execution flows** (race + fallback + normalization)
+* **Production concerns**: caching, retries, logging, testing, metrics
+
+An engineer can pick up this spec, scaffold the directory structure, implement each adapter to the `CheckerAdapter` interface, wire up the orchestrator, and have a battle-tested, production-grade Domain Status Checker in hours.
