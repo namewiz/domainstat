@@ -1,13 +1,13 @@
 export interface DomainStatus {
   domain: string;
-  availability: 'available' | 'unavailable' | 'unsupported';
+  availability: 'available' | 'unavailable' | 'unsupported' | 'invalid';
   fineStatus?:
     | 'expiring_soon'
     | 'registered_not_in_use'
     | 'premium'
     | 'for_sale'
     | 'reserved';
-  source: 'host' | 'doh' | 'rdap' | 'whois-lib' | 'whois-api';
+  source: 'validator' | 'host' | 'doh' | 'rdap' | 'whois-lib' | 'whois-api';
   raw: any;
   timestamp: number;
 }
