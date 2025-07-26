@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { check } from '../src/index.js';
+import { check } from '../dist/index.js';
 
 const domains = [
   { name: 'example.com', availability: 'unavailable' },

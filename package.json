@@ -4,15 +4,11 @@
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc && esbuild --config=esbuild.config.json",
-    "test": "npm run build && node dist/tests/basic.test.js"
+    "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=node",
+    "test": "node ./tests/test.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Domain status checker library",
-  "devDependencies": {
-    "esbuild": "^0.20.2",
-    "typescript": "^5.4.5"
-  }
+  "description": "Domain status checker library"
 }
