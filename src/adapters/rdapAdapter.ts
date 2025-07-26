@@ -1,4 +1,4 @@
-import { CheckerAdapter, DomainStatus } from '../types.js';
+import { CheckerAdapter, DomainStatus, TldConfigEntry } from '../types.js';
 
 export class RdapAdapter implements CheckerAdapter {
   private baseUrl: string;
@@ -6,8 +6,12 @@ export class RdapAdapter implements CheckerAdapter {
     this.baseUrl = baseUrl;
   }
 
-  async check(domain: string, opts: { signal?: AbortSignal } = {}): Promise<DomainStatus> {
-    const res = await fetch(`${this.baseUrl}${domain}`, { signal: opts.signal });
+  async check(
+    domain: string,
+    opts: { signal?: AbortSignal; tldConfig?: TldConfigEntry } = {}
+  ): Promise<DomainStatus> {
+    const baseUrl = opts.tldConfig?.rdapServer || this.baseUrl;
+    const res = await fetch(`${baseUrl}${domain}`, { signal: opts.signal });
     if (res.status === 404) {
       return {
         domain,
