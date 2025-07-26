@@ -9,6 +9,7 @@ import { DohAdapter } from './adapters/dohAdapter.js';
 import { RdapAdapter } from './adapters/rdapAdapter.js';
 import { InMemoryCache } from './cache/inMemoryCache.js';
 import { DefaultLogger } from './logging/defaultLogger.js';
+import { validateDomain } from './validator.js';
 
 let cache: Cache = new InMemoryCache();
 let logger: Logger = new DefaultLogger();
@@ -36,6 +37,12 @@ function ttlFor(status: DomainStatus['availability']) {
 
 export async function check(domain: string, opts: { tldConfig?: TldConfigEntry } = {}): Promise<DomainStatus> {
   logger.info('domain.check.start', { domain });
+  const validated = validateDomain(domain);
+  if (validated.status) {
+    logger.info('domain.check.end', { domain, status: validated.status.availability, source: 'validator' });
+    return validated.status;
+  }
+  opts = { ...opts, tldConfig: { ...opts.tldConfig, ...validated.config } };
   const key = domain.toLowerCase();
   const cached = cache.get<DomainStatus>(key);
   if (cached) {
@@ -67,7 +74,7 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
 
     if (!opts.tldConfig?.skipRdap) {
       try {
-        const rdapRes = await rdap.check(domain);
+        const rdapRes = await rdap.check(domain, { tldConfig: opts.tldConfig });
         cache.set(key, rdapRes, ttlFor(rdapRes.availability));
         logger.info('domain.check.end', { domain, status: rdapRes.availability, source: rdapRes.source });
         return rdapRes;

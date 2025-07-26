@@ -10,5 +10,8 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Domain status checker library"
+  "description": "Domain status checker library",
+  "dependencies": {
+    "tldts": "^7.0.10"
+  }
 }
