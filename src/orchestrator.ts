@@ -1,0 +1,114 @@
+import {
+  Cache,
+  DomainStatus,
+  Logger,
+  TldConfigEntry,
+} from './types.js';
+import { HostAdapter } from './adapters/hostAdapter.js';
+import { DohAdapter } from './adapters/dohAdapter.js';
+import { RdapAdapter } from './adapters/rdapAdapter.js';
+import { InMemoryCache } from './cache/inMemoryCache.js';
+import { DefaultLogger } from './logging/defaultLogger.js';
+
+let cache: Cache = new InMemoryCache();
+let logger: Logger = new DefaultLogger();
+let concurrency = 5;
+
+export function configure(opts: {
+  cache?: Cache;
+  logger?: Logger;
+  concurrency?: number;
+}) {
+  if (opts.cache) cache = opts.cache;
+  if (opts.logger) logger = opts.logger;
+  if (opts.concurrency) concurrency = opts.concurrency;
+}
+
+const host = new HostAdapter();
+const doh = new DohAdapter();
+const rdap = new RdapAdapter();
+
+function ttlFor(status: DomainStatus['availability']) {
+  if (status === 'available') return 5 * 60 * 1000;
+  if (status === 'unavailable') return 60 * 60 * 1000;
+  return 60 * 1000;
+}
+
+export async function check(domain: string, opts: { tldConfig?: TldConfigEntry } = {}): Promise<DomainStatus> {
+  logger.info('domain.check.start', { domain });
+  const key = domain.toLowerCase();
+  const cached = cache.get<DomainStatus>(key);
+  if (cached) {
+    logger.info('cache.hit', { domain });
+    return cached;
+  }
+
+  const ac = new AbortController();
+
+  try {
+    const dnsPromise = Promise.race([
+      host.check(domain, { signal: ac.signal }),
+      doh.check(domain, { signal: ac.signal }),
+    ]);
+
+    let dnsResult: DomainStatus | null = null;
+    try {
+      dnsResult = await dnsPromise;
+      ac.abort();
+    } catch (err) {
+      logger.warn('dns.failed', { domain, error: String(err) });
+    }
+
+    if (dnsResult && dnsResult.availability === 'unavailable') {
+      cache.set(key, dnsResult, ttlFor(dnsResult.availability));
+      logger.info('domain.check.end', { domain, status: dnsResult.availability, source: dnsResult.source });
+      return dnsResult;
+    }
+
+    if (!opts.tldConfig?.skipRdap) {
+      try {
+        const rdapRes = await rdap.check(domain);
+        cache.set(key, rdapRes, ttlFor(rdapRes.availability));
+        logger.info('domain.check.end', { domain, status: rdapRes.availability, source: rdapRes.source });
+        return rdapRes;
+      } catch (err) {
+        logger.warn('rdap.failed', { domain, error: String(err) });
+      }
+    }
+
+    // fallback unknown -> assume available
+    const result: DomainStatus = {
+      domain,
+      availability: 'available',
+      source: 'rdap',
+      raw: null,
+      timestamp: Date.now(),
+    };
+    cache.set(key, result, ttlFor(result.availability));
+    logger.info('domain.check.end', { domain, status: result.availability, source: result.source });
+    return result;
+  } finally {
+    ac.abort();
+  }
+}
+
+export async function checkBatch(domains: string[]): Promise<DomainStatus[]> {
+  const results: DomainStatus[] = [];
+  const queue = [...domains];
+  const workers: Promise<void>[] = [];
+
+  const worker = async () => {
+    while (queue.length) {
+      const d = queue.shift();
+      if (!d) break;
+      const res = await check(d);
+      results[domains.indexOf(d)] = res;
+    }
+  };
+
+  for (let i = 0; i < concurrency; i++) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+  return results;
+}
