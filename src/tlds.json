@@ -33,7 +33,7 @@
 
   "cn": "https://rdap.apnic.net/",
   "de": "https://rdap.denic.de/",
-  "uk": "https://rdap.nominet.uk/",
+  "uk": true,
   "nl": true,
   "ru": true,
   "br": true,

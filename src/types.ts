@@ -19,13 +19,6 @@ export interface CheckerAdapter {
   ): Promise<DomainStatus>;
 }
 
-export interface Logger {
-  info(msg: string, meta?: object): void;
-  warn(msg: string, meta?: object): void;
-  error(msg: string, meta?: object): void;
-  debug(msg: string, meta?: object): void;
-}
-
 export interface TldConfigEntry {
   rdapServer?: string;
   skipRdap?: boolean;

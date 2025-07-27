@@ -1,6 +1,5 @@
-import assert from 'assert';
 import { check } from '../dist/index.js';
-import tlds from '../src/tlds.json' assert { type: 'json' };
+import tlds from '../src/tlds.json' with { type: 'json' };
 
 const availableNgTLDs = [
   { name: 'this-domain-should-not-exist-12345.ng', availability: 'available' },
