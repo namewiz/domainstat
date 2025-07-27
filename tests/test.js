@@ -1,4 +1,4 @@
-import { check } from '../dist/index.js';
+import { checkBatch } from '../dist/index.js';
 import tlds from '../src/tlds.json' with { type: 'json' };
 
 const availableNgTLDs = [
@@ -43,11 +43,16 @@ const domains = [
 
   const allDomains = domains.concat(...tldDomains);
 
+  const names = allDomains.map((d) => d.name);
+  const uniqueNames = Array.from(new Set(names));
+  const batchResults = await checkBatch(uniqueNames);
+  const resultsMap = Object.fromEntries(uniqueNames.map((n, i) => [n, batchResults[i]]));
+
   let passed = 0;
   const failed = [];
 
   for (const d of allDomains) {
-    const res = await check(d.name);
+    const res = resultsMap[d.name];
     const msg = `domain:${d.name}, expected:${d.availability}, got:${res.availability}`;
     if (res.availability === d.availability) {
       console.log(`PASSED: ${msg}`);
