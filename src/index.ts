@@ -1,4 +1,4 @@
-import { DomainStatus, Logger, TldConfigEntry } from './types.js';
+import { DomainStatus, TldConfigEntry } from './types.js';
 import { HostAdapter } from './adapters/hostAdapter.js';
 import { DohAdapter } from './adapters/dohAdapter.js';
 import { RdapAdapter } from './adapters/rdapAdapter.js';
@@ -10,14 +10,15 @@ const isNode =
   process.versions != null &&
   process.versions.node != null;
 
-let cache: Cache = new Cache();
-let logger: Logger = console;
-let concurrency = 5;
+let cache = new Cache();
+let logger = console;
+let numWorkers = 100;
 
-export function configure(opts: { cache?: Cache; logger?: Logger; concurrency?: number; }) {
+
+export function configure(opts: { cache?: Cache; logger?: Console; concurrency?: number; }) {
   if (opts.cache) cache = opts.cache;
   if (opts.logger) logger = opts.logger;
-  if (opts.concurrency) concurrency = opts.concurrency;
+  if (opts.concurrency) numWorkers = opts.concurrency;
 }
 
 const host = new HostAdapter();
@@ -95,6 +96,7 @@ export async function checkBatch(domains: string[]): Promise<DomainStatus[]> {
   const queue = [...domains];
   const workers: Promise<void>[] = [];
 
+  // Each worker pulls a domain from the queue and processes until the queue is empty.
   const worker = async () => {
     while (queue.length) {
       const d = queue.shift();
@@ -104,7 +106,7 @@ export async function checkBatch(domains: string[]): Promise<DomainStatus[]> {
     }
   };
 
-  for (let i = 0; i < concurrency; i++) {
+  for (let i = 0; i < numWorkers; i++) {
     workers.push(worker());
   }
   await Promise.all(workers);

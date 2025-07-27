@@ -26,10 +26,11 @@
   "ng": true,
   "com.ng": true,
   "org.ng": true,
-  "edu.ng": false,
-  "gov.ng": false,
+  "edu.ng": true,
+  "gov.ng": true,
   "net.ng": true,
   "sch.ng": true,
+  "name.ng": true,
 
   "cn": "https://rdap.apnic.net/",
   "de": "https://rdap.denic.de/",

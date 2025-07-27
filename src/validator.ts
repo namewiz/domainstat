@@ -7,7 +7,7 @@ export function validateDomain(domain: string): {
   status: DomainStatus | null;
 } {
   const parsed = parse(domain.toLowerCase());
-  if (!parsed.domain || !parsed.publicSuffix) {
+  if (!parsed.domain || !parsed.publicSuffix || domain.trim() !== parsed.domain) {
     return {
       config: null,
       status: {

@@ -13,5 +13,8 @@
   "description": "Domain status checker library",
   "dependencies": {
     "tldts": "^7.0.10"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0"
   }
 }
