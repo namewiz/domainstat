@@ -7,7 +7,7 @@ export function validateDomain(domain: string): {
   status: DomainStatus | null;
 } {
   const parsed = parse(domain.toLowerCase());
-  if (!parsed.domain) {
+  if (!parsed.domain || !parsed.publicSuffix) {
     return {
       config: null,
       status: {
@@ -33,8 +33,21 @@ export function validateDomain(domain: string): {
     };
   }
 
-  const suffix = parsed.publicSuffix || '';
+  const suffix = parsed.publicSuffix;
   const val = (tlds as Record<string, string | boolean>)[suffix];
+  if(!val) {
+    return {
+      config: null,
+      status: {
+        domain,
+        availability: 'unsupported',
+        source: 'validator',
+        raw: null,
+        timestamp: Date.now(),
+      },
+    };
+  }
+  
   const cfg: TldConfigEntry =
     suffix && val ? (typeof val === 'string' ? { rdapServer: val } : {}) : {};
 

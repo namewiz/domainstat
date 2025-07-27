@@ -1,18 +1,18 @@
-import { Logger } from '../types.js';
+import { Logger } from "../types.js";
 
 export class DefaultLogger implements Logger {
   info(msg: string, meta: object = {}) {
-    console.log(JSON.stringify({ level: 'info', msg, ...meta }));
+    console.log(`INFO: ${msg} - ${JSON.stringify(meta)}`);
   }
   warn(msg: string, meta: object = {}) {
-    console.warn(JSON.stringify({ level: 'warn', msg, ...meta }));
+    console.warn(`WARN: ${msg} - ${JSON.stringify(meta)}`);
   }
   error(msg: string, meta: object = {}) {
-    console.error(JSON.stringify({ level: 'error', msg, ...meta }));
+    console.error(`ERROR: ${msg} - ${JSON.stringify(meta)}`);
   }
   debug(msg: string, meta: object = {}) {
     if (process.env.DEBUG) {
-      console.log(JSON.stringify({ level: 'debug', msg, ...meta }));
+      console.debug(`DEBUG: ${msg} - ${JSON.stringify(meta)}`);
     }
   }
 }

@@ -8,7 +8,7 @@
   "xyz": true,
   "app": true,
   "dev": true,
-  "io": true,
+  "io": false,
   "online": true,
   "site": true,
   "shop": true,
@@ -22,6 +22,14 @@
   "tv": true,
   "me": true,
   "gov": true,
+
+  "ng": true,
+  "com.ng": true,
+  "org.ng": true,
+  "edu.ng": false,
+  "gov.ng": false,
+  "net.ng": true,
+  "sch.ng": true,
 
   "cn": "https://rdap.apnic.net/",
   "de": "https://rdap.denic.de/",
