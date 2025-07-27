@@ -86,8 +86,8 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
     // fallback unknown -> assume available
     const result: DomainStatus = {
       domain,
-      availability: 'available',
-      source: 'rdap',
+      availability: 'unknown',
+      source: 'app',
       raw: null,
       timestamp: Date.now(),
     };

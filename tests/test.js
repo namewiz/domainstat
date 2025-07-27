@@ -25,6 +25,8 @@ const domains = [
   { name: 'example.com', availability: 'unavailable' },
   { name: 'iana.org', availability: 'unavailable' },
   { name: 'example.net', availability: 'unavailable' },
+  { name: 'my-test-domain-12345.dev', availability: 'available' },
+  { name: 'google.dev', availability: 'unavailable' },
   { name: 'example.io', availability: 'unsupported' },
   { name: 'this-domain-should-not-exist-12345.com', availability: 'available' },
   { name: 'my-test-domain-12345.co.uk', availability: 'available' },
