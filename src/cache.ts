@@ -1,11 +1,9 @@
-import { Cache } from '../types.js';
-
 interface Entry<T> {
   value: T;
   expires: number;
 }
 
-export class InMemoryCache implements Cache {
+export class Cache {
   private store = new Map<string, Entry<any>>();
   private maxSize: number;
 
@@ -25,7 +23,6 @@ export class InMemoryCache implements Cache {
 
   set<T>(key: string, value: T, ttlMs: number) {
     if (this.store.size >= this.maxSize) {
-      // simple LRU eviction: delete first key
       const firstKey = this.store.keys().next().value;
       if (firstKey) this.store.delete(firstKey);
     }

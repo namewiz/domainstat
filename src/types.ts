@@ -19,11 +19,6 @@ export interface CheckerAdapter {
   ): Promise<DomainStatus>;
 }
 
-export interface Cache {
-  get<T>(key: string): T | undefined;
-  set<T>(key: string, value: T, ttlMs: number): void;
-}
-
 export interface Logger {
   info(msg: string, meta?: object): void;
   warn(msg: string, meta?: object): void;
