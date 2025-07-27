@@ -1,5 +1,6 @@
 import assert from 'assert';
 import { check } from '../dist/index.js';
+import tlds from '../src/tlds.json' assert { type: 'json' };
 
 const availableNgTLDs = [
   { name: 'this-domain-should-not-exist-12345.ng', availability: 'available' },
@@ -36,17 +37,30 @@ const domains = [
   { name: 'example.invalidtld', availability: 'unsupported' },
 ].concat(...availableNgTLDs, ...unavailableNgTLDs);
 
-(async () => {
+(async function runTests() {
+  const tldDomains = Object.entries(tlds)
+    .filter(([, val]) => !!val)
+    .map(([tld]) => ({ name: `this-domain-should-not-exist-12345.${tld}`, availability: 'available' }));
+
+  const allDomains = domains.concat(...tldDomains);
+
   let passed = 0;
-  for (const d of domains) {
+  const failed = [];
+
+  for (const d of allDomains) {
     const res = await check(d.name);
-    try {
-      assert.strictEqual(res.availability, d.availability);
-      console.log(`PASSED: domain:${d.name}, expected:${d.availability}, got:${res.availability}`);
+    const msg = `domain:${d.name}, expected:${d.availability}, got:${res.availability}`;
+    if (res.availability === d.availability) {
+      console.log(`PASSED: ${msg}`);
       passed++;
-    } catch (err) {
-      console.error(`FAILED: domain:${d.name}, expected:${d.availability}, got:${res.availability}`);
+    } else {
+      failed.push(`FAILED: ${msg}`);
     }
   }
-  console.log(`\nTests passed: ${passed}/${domains.length}`);
+
+  for (const f of failed) {
+    console.error(f);
+  }
+
+  console.log(`\nTotal tests passed: ${passed}/${allDomains.length}`);
 })();
