@@ -5,6 +5,11 @@ import { RdapAdapter } from './adapters/rdapAdapter.js';
 import { Cache } from './cache.js';
 import { validateDomain } from './validator.js';
 
+const isNode =
+  typeof process !== 'undefined' &&
+  process.versions != null &&
+  process.versions.node != null;
+
 let cache: Cache = new Cache();
 let logger: Logger = console;
 let concurrency = 5;
@@ -43,14 +48,11 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
   const ac = new AbortController();
 
   try {
-    const dnsPromise = Promise.race([
-      host.check(domain, { signal: ac.signal }),
-      doh.check(domain, { signal: ac.signal }),
-    ]);
-
     let dnsResult: DomainStatus | null = null;
     try {
-      dnsResult = await dnsPromise;
+      dnsResult = isNode
+        ? await host.check(domain, { signal: ac.signal })
+        : await doh.check(domain, { signal: ac.signal });
       ac.abort();
     } catch (err) {
       logger.warn('dns.failed', { domain, error: String(err) });
