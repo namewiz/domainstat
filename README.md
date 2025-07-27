@@ -114,7 +114,7 @@ export interface CheckerAdapter {
 ### 4.3 `Cache` & `Logger`
 
 ```ts
-export interface Cache {
+export class Cache {
   get<T>(key: string): T | undefined;
   set<T>(key: string, value: T, ttlMs: number): void;
 }
@@ -143,47 +143,39 @@ export interface TldConfigEntry {
 
 ```
 /src
- ├─ index.ts            # exports public API
- ├─ orchestrator.ts     # implements check(), checkBatch()
+ ├─ index.ts        # public API and orchestration
  ├─ adapters/
  │    ├─ hostAdapter.ts
  │    ├─ dohAdapter.ts
- │    ├─ rdapAdapter.ts
- │    ├─ whoisLibAdapter.ts
- │    └─ whoisApiAdapter.ts
- ├─ tldConfig.ts        # { [tld]: { rdapServer?: string; skipRdap?: boolean } }
- ├─ env.ts              # detects Node vs Browser, exports available adapters
- ├─ cache/
- │    └─ inMemoryCache.ts
- ├─ logging/
- │    └─ defaultLogger.ts
- ├─ tests/              # unit & integration tests
- └─ types.ts            # shared interfaces & enums
+ │    └─ rdapAdapter.ts
+ ├─ cache.ts       # in-memory cache implementation
+ ├─ validator.ts
+ ├─ tlds.json
+ ├─ tests/         # unit & integration tests
+ └─ types.ts       # shared interfaces & enums
 ```
 
 ### 5.1 Public API (`index.ts`)
 
 ```ts
-import { check, checkBatch } from './orchestrator';
-import { configure } from './config';
+import { check, checkBatch } from './index';
+import { configure } from './index';
 
 export {
   check,
   checkBatch,
-  configure,  // allow injecting custom cache, logger, adapters
+  configure,  // allow injecting custom cache and logger
   DomainStatus,
 };
 ```
 
-### 5.2 Configuration (`config.ts`)
+### 5.2 Configuration
 
 ```ts
 export function configure(opts: {
   cache?: Cache;
   logger?: Logger;
   concurrency?: number;
-  dohUrls?: string[];
-  whoisApiKey?: string;
 }) { … }
 ```
 
@@ -219,7 +211,7 @@ export function configure(opts: {
 
 ## 7. Caching Strategy
 
-* **Pluggable** via `Cache` interface; default = in-memory LRU.
+* **Pluggable** via a cache object with `get`/`set`; default = in-memory LRU.
 * **Key**: `domain.toLowerCase()`
 * **TTL**:
 
