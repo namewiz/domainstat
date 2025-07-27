@@ -2,6 +2,8 @@ import { DomainStatus, TldConfigEntry } from './types.js';
 import { HostAdapter } from './adapters/hostAdapter.js';
 import { DohAdapter } from './adapters/dohAdapter.js';
 import { RdapAdapter } from './adapters/rdapAdapter.js';
+import { WhoisCliAdapter } from './adapters/whoisCliAdapter.js';
+import { WhoisApiAdapter } from './adapters/whoisApiAdapter.js';
 import { Cache } from './cache.js';
 import { validateDomain } from './validator.js';
 
@@ -24,6 +26,11 @@ export function configure(opts: { cache?: Cache; logger?: Console; concurrency?:
 const host = new HostAdapter();
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
+const whoisCli = new WhoisCliAdapter();
+const whoisApi = new WhoisApiAdapter(
+  typeof process !== 'undefined' ? (process.env.WHOISFREAKS_API_KEY as string | undefined) : undefined,
+  typeof process !== 'undefined' ? (process.env.WHOISXML_API_KEY as string | undefined) : undefined
+);
 
 function ttlFor(status: DomainStatus['availability']) {
   if (status === 'available') return 5 * 60 * 1000;
@@ -74,6 +81,27 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
       } catch (err) {
         logger.warn('rdap.failed', { domain, error: String(err) });
       }
+    }
+
+    let whoisRes: DomainStatus | null = null;
+    if (isNode) {
+      try {
+        whoisRes = await whoisCli.check(domain);
+      } catch (err) {
+        logger.warn('whois-lib.failed', { domain, error: String(err) });
+      }
+    } else {
+      try {
+        whoisRes = await whoisApi.check(domain);
+      } catch (err) {
+        logger.warn('whois-api.failed', { domain, error: String(err) });
+      }
+    }
+
+    if (whoisRes) {
+      cache.set(key, whoisRes, ttlFor(whoisRes.availability));
+      logger.info('domain.check.end', { domain, status: whoisRes.availability, source: whoisRes.source });
+      return whoisRes;
     }
 
     const result: DomainStatus = {
