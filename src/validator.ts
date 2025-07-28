@@ -1,4 +1,10 @@
 import tlds from './tlds.json' assert { type: 'json' };
+
+const tldMap: Record<string, string | boolean> = {
+  ...(tlds as any).popular,
+  ...(tlds as any).gTLDs,
+  ...(tlds as any).ccTLDs,
+};
 import { DomainStatus, TldConfigEntry } from './types.js';
 import { parse } from 'tldts';
 
@@ -34,7 +40,7 @@ export function validateDomain(domain: string): {
   }
 
   const suffix = parsed.publicSuffix;
-  const val = (tlds as Record<string, string | boolean>)[suffix];
+  const val = tldMap[suffix];
   if(!val) {
     return {
       config: null,

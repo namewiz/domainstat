@@ -1,5 +1,6 @@
 import { checkBatch } from '../dist/index.js';
 import tlds from '../src/tlds.json' with { type: 'json' };
+const tldMap = { ...tlds.popular, ...tlds.gTLDs, ...tlds.ccTLDs };
 
 
 const unavailableNgTLDs = [
@@ -25,7 +26,7 @@ const domains = [
 ].concat(...unavailableNgTLDs);
 
 (async function runTests() {
-  const availableTldDomains = Object.entries(tlds)
+  const availableTldDomains = Object.entries(tldMap)
     .filter(([, val]) => !!val)
     .map(([tld]) => ({ name: `this-domain-should-not-exist-12345.${tld}`, availability: 'available' }));
 
