@@ -1,6 +1,12 @@
 import { checkBatch } from '../dist/index.js';
 import tlds from '../src/tlds.json' with { type: 'json' };
+import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
 const tldMap = { ...tlds.popular, ...tlds.gTLDs, ...tlds.ccTLDs };
+const unavailableMap = {
+  ...unavailableDomainsJson.popular,
+  ...unavailableDomainsJson.gTLDs,
+  ...unavailableDomainsJson.ccTLDs,
+};
 
 
 const unavailableNgTLDs = [
@@ -29,8 +35,9 @@ const domains = [
   const availableTldDomains = Object.entries(tldMap)
     .filter(([, val]) => !!val)
     .map(([tld]) => ({ name: `this-domain-should-not-exist-12345.${tld}`, availability: 'available' }));
+  const unavailableTldDomains = Object.values(unavailableMap).map((domain) => ({ name: domain, availability: 'unavailable' }));
 
-  const allDomains = domains.concat(...availableTldDomains);
+  const allDomains = domains.concat(...availableTldDomains, ...unavailableTldDomains);
 
   const names = allDomains.map((d) => d.name);
   const uniqueNames = Array.from(new Set(names));
