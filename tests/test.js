@@ -59,8 +59,12 @@ const domains = [
   }
 
   for (const f of failed) {
-    console.error(f);
+    console.error(`\x1b[31m${f}\x1b[0m`);
   }
 
   console.log(`\nTotal tests passed: ${passed}/${allDomains.length}`);
+
+  if (failed.length > 0) {
+    process.exitCode = 1;
+  }
 })();
