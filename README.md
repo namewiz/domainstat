@@ -96,3 +96,21 @@ export function configure(opts: {
 * Add namespace to adapters, use it to store responses.
 * Implement `only` and `skip` config options, using namespaces
 * Implement per-adapter timeouts
+
+## Running the Demo
+
+1. Build the library:
+
+   ```bash
+   npm run build
+   ```
+
+2. Start the demo server:
+
+   ```bash
+   npm run demo
+   ```
+
+   This uses `npx serve` to host the `demo/` folder. Open the printed URL in your browser to try the UI.
+   The page includes a collapsible panel to choose which TLDs to check and
+   shows a results table for each query.
