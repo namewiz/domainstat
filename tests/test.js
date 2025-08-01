@@ -51,8 +51,8 @@ const domains = [
 
   for (const d of allDomains) {
     const res = resultsMap[d.name];
-    const msg = `domain:${d.name}, expected:${d.availability}, got:${res.availability}, source:${res.source}`;
-    const hasNs = res.raw && res.raw[res.source] !== undefined;
+    const msg = `domain:${d.name}, expected:${d.availability}, got:${res.availability}, resolver:${res.resolver}`;
+    const hasNs = res.raw && res.raw[res.resolver] !== undefined;
     if (res.availability === d.availability && hasNs) {
       console.log(`PASSED: ${msg}`);
       passed++;

@@ -1,4 +1,4 @@
-import { CheckerAdapter, DomainStatus, TldConfigEntry } from '../types.js';
+import { CheckerAdapter, AdapterResponse, TldConfigEntry } from '../types.js';
 
 export class RdapAdapter implements CheckerAdapter {
   namespace = 'rdap';
@@ -10,33 +10,43 @@ export class RdapAdapter implements CheckerAdapter {
   async check(
     domain: string,
     opts: { signal?: AbortSignal; tldConfig?: TldConfigEntry } = {}
-  ): Promise<DomainStatus> {
+  ): Promise<AdapterResponse> {
     const baseUrl = opts.tldConfig?.rdapServer || this.baseUrl;
-    const res = await fetch(`${baseUrl}${domain}`, { signal: opts.signal });
-    const text = await res.text();
-    if(text) {
-      console.log('\n\nrdap.text', domain, text);
-    }
-    if (res.status === 404) {
-      console.log("rdap.404: ", domain, text )
+    try {
+      const res = await fetch(`${baseUrl}${domain}`, { signal: opts.signal });
+      const text = await res.text();
+      if (res.status === 404) {
+        return {
+          domain,
+          availability: 'available',
+          source: this.namespace,
+          raw: null,
+        };
+      }
+      if (!res.ok) {
+        return {
+          domain,
+          availability: 'unknown',
+          source: this.namespace,
+          raw: text,
+          error: new Error(`rdap failed: ${res.status}`),
+        };
+      }
+      const data = JSON.parse(text);
       return {
         domain,
-        availability: 'available',
-        source: 'rdap',
-        raw: { [this.namespace]: null },
-        timestamp: Date.now(),
+        availability: 'unavailable',
+        source: this.namespace,
+        raw: data,
+      };
+    } catch (err: any) {
+      return {
+        domain,
+        availability: 'unknown',
+        source: this.namespace,
+        raw: null,
+        error: err,
       };
     }
-    if (!res.ok) {
-      throw new Error(`rdap failed: ${res.status}`);
-    }
-    const data = JSON.parse(text);
-    return {
-      domain,
-      availability: 'unavailable',
-      source: 'rdap',
-      raw: { [this.namespace]: data },
-      timestamp: Date.now(),
-    };
   }
 }

@@ -19,9 +19,8 @@ export function validateDomain(domain: string): {
       status: {
         domain,
         availability: 'invalid',
-        source: 'validator',
+        resolver: 'validator',
         raw: { validator: null },
-        timestamp: Date.now(),
       },
     };
   }
@@ -32,9 +31,8 @@ export function validateDomain(domain: string): {
       status: {
         domain,
         availability: 'unsupported',
-        source: 'validator',
+        resolver: 'validator',
         raw: { validator: null },
-        timestamp: Date.now(),
       },
     };
   }
@@ -47,9 +45,8 @@ export function validateDomain(domain: string): {
       status: {
         domain,
         availability: 'unsupported',
-        source: 'validator',
+        resolver: 'validator',
         raw: { validator: null },
-        timestamp: Date.now(),
       },
     };
   }

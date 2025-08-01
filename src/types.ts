@@ -1,12 +1,6 @@
-export interface DomainStatus {
+export interface AdapterResponse {
   domain: string;
   availability: 'available' | 'unavailable' | 'unsupported' | 'invalid' | 'unknown';
-  fineStatus?:
-    | 'expiring_soon'
-    | 'registered_not_in_use'
-    | 'premium'
-    | 'for_sale'
-    | 'reserved';
   source:
     | 'validator'
     | 'dns.host'
@@ -15,11 +9,16 @@ export interface DomainStatus {
     | 'whois.lib'
     | 'whois.api'
     | 'app';
-  /**
-   * Raw responses from each adapter keyed by its namespace.
-   */
-  raw: Record<string, any>;
-  timestamp: number;
+  raw: any;
+  error?: Error;
+}
+
+export interface DomainStatus {
+  domain: string;
+  availability: 'available' | 'unavailable' | 'unsupported' | 'invalid' | 'unknown';
+  resolver: AdapterResponse['source'];
+  raw: Record<AdapterResponse['source'], AdapterResponse['raw']>;
+  error?: Error;
 }
 
 export interface CheckerAdapter {
@@ -28,7 +27,7 @@ export interface CheckerAdapter {
   check(
     domain: string,
     opts?: { signal?: AbortSignal; tldConfig?: TldConfigEntry }
-  ): Promise<DomainStatus>;
+  ): Promise<AdapterResponse>;
 }
 
 export interface TldConfigEntry {

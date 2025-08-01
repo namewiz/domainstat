@@ -1,4 +1,4 @@
-import { CheckerAdapter, DomainStatus } from '../types.js';
+import { CheckerAdapter, AdapterResponse } from '../types.js';
 
 export class WhoisApiAdapter implements CheckerAdapter {
   namespace = 'whois.api';
@@ -31,26 +31,35 @@ export class WhoisApiAdapter implements CheckerAdapter {
     return JSON.parse(text);
   }
 
-  async check(domain: string, opts: { signal?: AbortSignal } = {}): Promise<DomainStatus> {
-    let data: any;
+  async check(domain: string, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {
     try {
-      data = await this.fetchFreaks(domain, opts.signal);
-    } catch (err: any) {
-      if (err.quota) {
-        data = await this.fetchXml(domain, opts.signal);
-      } else {
-        throw err;
+      let data: any;
+      try {
+        data = await this.fetchFreaks(domain, opts.signal);
+      } catch (err: any) {
+        if (err.quota) {
+          data = await this.fetchXml(domain, opts.signal);
+        } else {
+          throw err;
+        }
       }
-    }
 
-    const text = JSON.stringify(data).toLowerCase();
-    const isAvailable = text.includes('n/a') || text.includes('no match') || text.includes('not found');
-    return {
-      domain,
-      availability: isAvailable ? 'available' : 'unavailable',
-      source: 'whois.api',
-      raw: { [this.namespace]: data },
-      timestamp: Date.now(),
-    };
+      const text = JSON.stringify(data).toLowerCase();
+      const isAvailable = text.includes('n/a') || text.includes('no match') || text.includes('not found');
+      return {
+        domain,
+        availability: isAvailable ? 'available' : 'unavailable',
+        source: this.namespace,
+        raw: data,
+      };
+    } catch (err: any) {
+      return {
+        domain,
+        availability: 'unknown',
+        source: this.namespace,
+        raw: null,
+        error: err,
+      };
+    }
   }
 }
