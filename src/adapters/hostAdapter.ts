@@ -23,6 +23,7 @@ export class HostAdapter implements CheckerAdapter {
           timestamp: Date.now(),
         };
       }
+      console.log("dns.host: error: " + err.code)
       throw err;
     }
   }

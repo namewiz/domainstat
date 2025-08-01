@@ -14,7 +14,7 @@ const isNode =
 
 let cache = new Cache();
 let logger = console;
-let numWorkers = 100;
+let numWorkers = 10;
 
 
 export function configure(opts: { cache?: Cache; logger?: Console; concurrency?: number; }) {

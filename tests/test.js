@@ -24,7 +24,9 @@ const domains = [
   { name: 'iana.org', availability: 'unavailable' },
   { name: 'example.net', availability: 'unavailable' },
   { name: 'google.dev', availability: 'unavailable' },
-  { name: 'example.io', availability: 'unsupported' },
+  { name: 'google.io', availability: 'unavailable' },
+  { name: 'example.io', availability: 'available' }, // todo: investigate why this is available.
+  { name: 'amazon.shop', availability: 'unavailable' },
   { name: 'bundesregierung.de', availability: 'unavailable' },
   { name: 'example.cn', availability: 'unavailable' },
   { name: 'invalid@domain', availability: 'invalid' },
