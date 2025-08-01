@@ -1,7 +1,7 @@
 import { CheckerAdapter, AdapterResponse } from '../types.js';
 import { promises as dns } from 'dns';
 
-const DEFAULT_TIMEOUT_MS = 3000;
+const DEFAULT_TIMEOUT_MS = 100;
 
 export class HostAdapter implements CheckerAdapter {
   namespace = 'dns.host';
@@ -11,12 +11,12 @@ export class HostAdapter implements CheckerAdapter {
       setTimeout(() => reject(new Error('timeout')), timeoutMs)
     );
     try {
-      await Promise.race([dns.resolve(domain, 'A'), timer]);
+      const raw = await Promise.race([dns.resolve(domain, 'A'), timer]);
       return {
         domain,
         availability: 'unavailable',
         source: 'dns.host',
-        raw: true,
+        raw,
       };
     } catch (err: any) {
       if (err.code === 'ENODATA' || err.code === 'ENOTFOUND') {
@@ -27,6 +27,17 @@ export class HostAdapter implements CheckerAdapter {
           raw: false,
         };
       }
+      console.error("dns.host error: ", err.code)
+      // TODO: This is only the case for some TLDs, limit to TLDs.
+      // E.g. for .lc, timeout => available.
+      // if(err.code === 'ESERVFAIL' || err.code === 'ETIMEOUT') {
+      //   return {
+      //     domain,
+      //     availability: 'unavailable',
+      //     source: 'dns.host',
+      //     raw: false,
+      //   };
+      // }
       return {
         domain,
         availability: 'unknown',

@@ -1,6 +1,6 @@
 import { CheckerAdapter, AdapterResponse, TldConfigEntry } from '../types.js';
 
-const DEFAULT_TIMEOUT_MS = 5000;
+const DEFAULT_TIMEOUT_MS = 600;
 
 export class RdapAdapter implements CheckerAdapter {
   namespace = 'rdap';

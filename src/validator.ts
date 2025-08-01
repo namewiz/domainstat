@@ -4,6 +4,7 @@ const tldMap: Record<string, string | boolean> = {
   ...(tlds as any).popular,
   ...(tlds as any).gTLDs,
   ...(tlds as any).ccTLDs,
+  ...(tlds as any).SLDs,
 };
 import { DomainStatus } from "./types.js";
 import { parse } from "tldts";

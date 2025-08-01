@@ -1,7 +1,7 @@
 import { checkBatch } from '../dist/index.js';
 import tlds from '../src/tlds.json' with { type: 'json' };
 import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
-const tldMap = { ...tlds.popular, ...tlds.gTLDs, ...tlds.ccTLDs };
+const tldMap = { ...tlds.popular, ...tlds.gTLDs, ...tlds.ccTLDs, ...tlds.SLDs };
 const unavailableMap = {
   ...unavailableDomainsJson.popular,
   ...unavailableDomainsJson.gTLDs,

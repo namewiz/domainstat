@@ -2,7 +2,7 @@ import { CheckerAdapter, AdapterResponse } from '../types.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
-const DEFAULT_TIMEOUT_MS = 8000;
+const DEFAULT_TIMEOUT_MS = 1000;
 
 const execAsync = promisify(exec);
 

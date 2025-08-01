@@ -1,6 +1,6 @@
 import { CheckerAdapter, AdapterResponse } from '../types.js';
 
-const DEFAULT_TIMEOUT_MS = 8000;
+const DEFAULT_TIMEOUT_MS = 1000;
 
 export class WhoisApiAdapter implements CheckerAdapter {
   namespace = 'whois.api';
