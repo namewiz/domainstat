@@ -1,4 +1,4 @@
-import { DomainStatus, TldConfigEntry, AdapterResponse } from './types.js';
+import { DomainStatus, TldConfigEntry, AdapterResponse, CheckOptions } from './types.js';
 import { HostAdapter } from './adapters/hostAdapter.js';
 import { DohAdapter } from './adapters/dohAdapter.js';
 import { RdapAdapter } from './adapters/rdapAdapter.js';
@@ -11,34 +11,6 @@ const isNode =
   process.versions != null &&
   process.versions.node != null;
 
-let logger = console;
-let numWorkers = 10;
-let onlyNamespaces: string[] | undefined;
-let skipNamespaces: string[] | undefined;
-
-
-export function configure(opts: {
-  logger?: Console;
-  concurrency?: number;
-  only?: string[];
-  skip?: string[];
-}) {
-  if (opts.logger) logger = opts.logger;
-  if (opts.concurrency) numWorkers = opts.concurrency;
-  if (opts.only !== undefined) onlyNamespaces = opts.only;
-  if (opts.skip !== undefined) skipNamespaces = opts.skip;
-}
-
-function adapterAllowed(ns: string): boolean {
-  if (onlyNamespaces && !onlyNamespaces.some((p) => ns.startsWith(p))) {
-    return false;
-  }
-  if (skipNamespaces && skipNamespaces.some((p) => ns.startsWith(p))) {
-    return false;
-  }
-  return true;
-}
-
 const host = new HostAdapter();
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
@@ -48,7 +20,18 @@ const whoisApi = new WhoisApiAdapter(
   typeof process !== 'undefined' ? (process.env.WHOISXML_API_KEY as string | undefined) : undefined
 );
 
-export async function check(domain: string, opts: { tldConfig?: TldConfigEntry } = {}): Promise<DomainStatus> {
+function adapterAllowed(ns: string, opts: CheckOptions): boolean {
+  if (opts.only && !opts.only.some((p) => ns.startsWith(p))) {
+    return false;
+  }
+  if (opts.skip && opts.skip.some((p) => ns.startsWith(p))) {
+    return false;
+  }
+  return true;
+}
+
+export async function check(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
+  const logger = opts.logger ?? console;
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
   const validated = validateDomain(domain);
@@ -63,7 +46,7 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
 
     let dnsResult: AdapterResponse | null = null;
     const dnsAdapter = isNode ? host : doh;
-    if (adapterAllowed(dnsAdapter.namespace)) {
+    if (adapterAllowed(dnsAdapter.namespace, opts)) {
       try {
         dnsResult = await dnsAdapter.check(domain);
       } catch (err: any) {
@@ -94,7 +77,7 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
       return result;
     }
 
-    if (!opts.tldConfig?.skipRdap && adapterAllowed(rdap.namespace)) {
+    if (!opts.tldConfig?.skipRdap && adapterAllowed(rdap.namespace, opts)) {
       const rdapRes = await rdap.check(domain, { tldConfig: opts.tldConfig });
       raw[rdap.namespace] = rdapRes.raw;
       if (rdapRes.error) {
@@ -115,7 +98,7 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
 
     let whoisRes: AdapterResponse | null = null;
     const whoisAdapter = isNode ? whoisCli : whoisApi;
-    if (adapterAllowed(whoisAdapter.namespace)) {
+    if (adapterAllowed(whoisAdapter.namespace, opts)) {
       whoisRes = await whoisAdapter.check(domain);
       raw[whoisAdapter.namespace] = whoisRes.raw;
       if (whoisRes.error) {
@@ -148,7 +131,7 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
   }
 }
 
-export async function checkBatch(domains: string[]): Promise<DomainStatus[]> {
+export async function checkBatch(domains: string[], opts: CheckOptions = {}): Promise<DomainStatus[]> {
   const results: DomainStatus[] = [];
   const queue = [...domains];
   const workers: Promise<void>[] = [];
@@ -158,11 +141,12 @@ export async function checkBatch(domains: string[]): Promise<DomainStatus[]> {
     while (queue.length) {
       const d = queue.shift();
       if (!d) break;
-      const res = await check(d);
+      const res = await check(d, opts);
       results[domains.indexOf(d)] = res;
     }
   };
 
+  const numWorkers = opts.concurrency ?? 10;
   for (let i = 0; i < numWorkers; i++) {
     workers.push(worker());
   }
