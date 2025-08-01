@@ -1,5 +1,7 @@
 import { CheckerAdapter, AdapterResponse } from '../types.js';
 
+const DEFAULT_TIMEOUT_MS = 3000;
+
 export class DohAdapter implements CheckerAdapter {
   namespace = 'dns.doh';
   private url: string;
@@ -7,12 +9,15 @@ export class DohAdapter implements CheckerAdapter {
     this.url = url;
   }
 
-  async check(domain: string, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {
+  async check(domain: string, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeoutMs);
     try {
       const params = new URLSearchParams({ name: domain, type: 'A' });
       const res = await fetch(`${this.url}?${params.toString()}`, {
         headers: { accept: 'application/dns-json' },
-        signal: opts.signal,
+        signal: ac.signal,
       });
       if (!res.ok) {
         return {
@@ -40,6 +45,9 @@ export class DohAdapter implements CheckerAdapter {
         raw: null,
         error: err,
       };
+    }
+    finally {
+      clearTimeout(timer);
     }
   }
 }
