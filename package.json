@@ -5,7 +5,8 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=node",
-    "test": "npm run build && node ./tests/test.js"
+    "test": "npm run build && node ./tests/test.js",
+    "demo": "npm run build && npx serve demo"
   },
   "keywords": [],
   "author": "",

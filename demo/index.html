@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Domain Status Checker Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    form { margin-bottom: 1rem; }
+    details { margin-bottom: 1rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 0.25rem 0.5rem; text-align: left; }
+    th { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>Domain Status Checker Demo</h1>
+  <form id="check-form">
+    <input id="domain-input" type="text" placeholder="example or example.com" />
+    <button type="submit">Check</button>
+  </form>
+
+  <details open>
+    <summary>Select TLDs</summary>
+    <div class="group">
+      <label><input type="checkbox" class="group-toggle" data-group="classic" checked> Classic</label>
+      <div>
+        <label><input type="checkbox" class="tld classic" value="com" checked> .com</label>
+        <label><input type="checkbox" class="tld classic" value="net" checked> .net</label>
+        <label><input type="checkbox" class="tld classic" value="org" checked> .org</label>
+        <label><input type="checkbox" class="tld classic" value="io" checked> .io</label>
+        <label><input type="checkbox" class="tld classic" value="dev" checked> .dev</label>
+      </div>
+    </div>
+    <div class="group">
+      <label><input type="checkbox" class="group-toggle" data-group="new" checked> New</label>
+      <div>
+        <label><input type="checkbox" class="tld new" value="app" checked> .app</label>
+        <label><input type="checkbox" class="tld new" value="xyz" checked> .xyz</label>
+        <label><input type="checkbox" class="tld new" value="lol" checked> .lol</label>
+        <label><input type="checkbox" class="tld new" value="shop" checked> .shop</label>
+      </div>
+    </div>
+    <div class="group">
+      <label><input type="checkbox" class="group-toggle" data-group="other" checked> Other</label>
+      <div>
+        <label><input type="checkbox" class="tld other" value="co" checked> .co</label>
+        <label><input type="checkbox" class="tld other" value="ai" checked> .ai</label>
+        <label><input type="checkbox" class="tld other" value="me" checked> .me</label>
+      </div>
+    </div>
+  </details>
+
+  <table id="results-table">
+    <thead>
+      <tr><th>TLD</th><th>Status</th><th>Source</th></tr>
+    </thead>
+    <tbody id="results"></tbody>
+  </table>
+
+  <script type="module" src="../dist/index.js"></script>
+  <script type="module">
+    import { check } from '../dist/index.js';
+
+    function selectedTlds() {
+      return Array.from(document.querySelectorAll('input.tld:checked')).map(c => c.value);
+    }
+
+    function addRow(domain) {
+      const tbody = document.getElementById('results');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${domain}</td><td>checking...</td><td></td>`;
+      tbody.appendChild(tr);
+      return tr;
+    }
+
+    async function runChecks(base, tlds) {
+      for (const tld of tlds) {
+        const full = `${base}.${tld}`;
+        const row = addRow(full);
+        try {
+          const res = await check(full);
+          row.cells[1].textContent = res.availability;
+          row.cells[2].textContent = res.source;
+        } catch (err) {
+          row.cells[1].textContent = 'error';
+          row.cells[2].textContent = err;
+        }
+      }
+    }
+
+    document.querySelectorAll('.group-toggle').forEach(g => {
+      g.addEventListener('change', () => {
+        const grp = g.dataset.group;
+        document.querySelectorAll(`input.tld.${grp}`).forEach(t => { t.checked = g.checked; });
+      });
+    });
+
+    document.getElementById('check-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = document.getElementById('domain-input');
+      const value = input.value.trim();
+      if (!value) return;
+      let base = value;
+      let explicit = '';
+      if (value.includes('.')) {
+        const parts = value.split('.');
+        base = parts[0];
+        explicit = parts[1];
+      }
+      let tlds = selectedTlds();
+      if (explicit && !tlds.includes(explicit)) {
+        tlds = [explicit, ...tlds];
+      }
+      runChecks(base, tlds);
+      input.value = '';
+    });
+
+    const examples = [
+      'example',
+      'google.com',
+      'this-domain-should-not-exist-12345'
+    ];
+    for (const d of examples) {
+      let base = d;
+      let tlds = selectedTlds();
+      let explicit = '';
+      if (d.includes('.')) {
+        const parts = d.split('.');
+        base = parts[0];
+        explicit = parts[1];
+      }
+      if (explicit && !tlds.includes(explicit)) {
+        tlds = [explicit, ...tlds];
+      }
+      runChecks(base, tlds);
+    }
+  </script>
+</body>
+</html>
