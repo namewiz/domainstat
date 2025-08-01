@@ -5,6 +5,7 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 
 export class WhoisCliAdapter implements CheckerAdapter {
+  namespace = 'whois.lib';
   async check(domain: string): Promise<DomainStatus> {
     const cmd = `whois ${domain}`;
     const { stdout } = await execAsync(cmd, { maxBuffer: 1024 * 1024 });
@@ -19,8 +20,8 @@ export class WhoisCliAdapter implements CheckerAdapter {
     return {
       domain,
       availability: isAvailable ? 'available' : 'unavailable',
-      source: 'whois-lib',
-      raw: stdout,
+      source: 'whois.lib',
+      raw: { [this.namespace]: stdout },
       timestamp: Date.now(),
     };
   }

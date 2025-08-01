@@ -1,6 +1,7 @@
 import { CheckerAdapter, DomainStatus, TldConfigEntry } from '../types.js';
 
 export class RdapAdapter implements CheckerAdapter {
+  namespace = 'rdap';
   private baseUrl: string;
   constructor(baseUrl = 'https://rdap.org/domain/') {
     this.baseUrl = baseUrl;
@@ -22,7 +23,7 @@ export class RdapAdapter implements CheckerAdapter {
         domain,
         availability: 'available',
         source: 'rdap',
-        raw: null,
+        raw: { [this.namespace]: null },
         timestamp: Date.now(),
       };
     }
@@ -34,7 +35,7 @@ export class RdapAdapter implements CheckerAdapter {
       domain,
       availability: 'unavailable',
       source: 'rdap',
-      raw: data,
+      raw: { [this.namespace]: data },
       timestamp: Date.now(),
     };
   }

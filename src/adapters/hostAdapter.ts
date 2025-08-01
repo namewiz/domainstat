@@ -2,6 +2,7 @@ import { CheckerAdapter, DomainStatus } from '../types.js';
 import { promises as dns } from 'dns';
 
 export class HostAdapter implements CheckerAdapter {
+  namespace = 'dns.host';
   async check(domain: string, opts: { signal?: AbortSignal } = {}): Promise<DomainStatus> {
     const start = Date.now();
     try {
@@ -9,8 +10,8 @@ export class HostAdapter implements CheckerAdapter {
       return {
         domain,
         availability: 'unavailable',
-        source: 'host',
-        raw: true,
+        source: 'dns.host',
+        raw: { [this.namespace]: true },
         timestamp: Date.now(),
       };
     } catch (err: any) {
@@ -18,8 +19,8 @@ export class HostAdapter implements CheckerAdapter {
         return {
           domain,
           availability: 'available',
-          source: 'host',
-          raw: false,
+          source: 'dns.host',
+          raw: { [this.namespace]: false },
           timestamp: Date.now(),
         };
       }

@@ -1,6 +1,7 @@
 import { CheckerAdapter, DomainStatus } from '../types.js';
 
 export class WhoisApiAdapter implements CheckerAdapter {
+  namespace = 'whois.api';
   private freaksKey?: string;
   private xmlKey?: string;
   constructor(freaksKey?: string, xmlKey?: string) {
@@ -47,8 +48,8 @@ export class WhoisApiAdapter implements CheckerAdapter {
     return {
       domain,
       availability: isAvailable ? 'available' : 'unavailable',
-      source: 'whois-api',
-      raw: data,
+      source: 'whois.api',
+      raw: { [this.namespace]: data },
       timestamp: Date.now(),
     };
   }

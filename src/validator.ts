@@ -20,7 +20,7 @@ export function validateDomain(domain: string): {
         domain,
         availability: 'invalid',
         source: 'validator',
-        raw: null,
+        raw: { validator: null },
         timestamp: Date.now(),
       },
     };
@@ -33,7 +33,7 @@ export function validateDomain(domain: string): {
         domain,
         availability: 'unsupported',
         source: 'validator',
-        raw: null,
+        raw: { validator: null },
         timestamp: Date.now(),
       },
     };
@@ -48,7 +48,7 @@ export function validateDomain(domain: string): {
         domain,
         availability: 'unsupported',
         source: 'validator',
-        raw: null,
+        raw: { validator: null },
         timestamp: Date.now(),
       },
     };

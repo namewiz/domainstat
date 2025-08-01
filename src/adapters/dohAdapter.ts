@@ -1,6 +1,7 @@
 import { CheckerAdapter, DomainStatus } from '../types.js';
 
 export class DohAdapter implements CheckerAdapter {
+  namespace = 'dns.doh';
   private url: string;
   constructor(url = 'https://cloudflare-dns.com/dns-query') {
     this.url = url;
@@ -21,8 +22,8 @@ export class DohAdapter implements CheckerAdapter {
     return {
       domain,
       availability: available ? 'available' : 'unavailable',
-      source: 'doh',
-      raw: data,
+      source: 'dns.doh',
+      raw: { [this.namespace]: data },
       timestamp: Date.now(),
     };
   }
