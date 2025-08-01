@@ -55,6 +55,10 @@ export {
 export function configure(opts: {
   logger?: Logger;
   concurrency?: number;
+  /** Only run adapters whose namespace starts with one of these prefixes */
+  only?: string[];
+  /** Skip adapters whose namespace starts with one of these prefixes */
+  skip?: string[];
 }) { … }
 ```
 
@@ -80,7 +84,7 @@ export function configure(opts: {
 * Fix whois fallback, perhaps using whois-json library.
 * Expand ccTLD list to include all ccTLDs.
 * Add namespace to adapters, use it to store raw responses.
-* Implement `only` and `skip` config options, using namespaces
+* ~~Implement `only` and `skip` config options, using namespaces~~
 * ~~Implement per-adapter timeouts~~
 
 ## Running the Demo
