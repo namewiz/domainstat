@@ -1,4 +1,4 @@
-import { checkBatch } from '../dist/index.js';
+import { checkBatch, check, configure } from '../dist/index.js';
 import tlds from '../src/tlds.json' with { type: 'json' };
 import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
 const tldMap = { ...tlds.popular, ...tlds.gTLDs, ...tlds.ccTLDs, ...tlds.SLDs };
@@ -70,4 +70,26 @@ const domains = [
   if (failed.length > 0) {
     process.exitCode = 1;
   }
+  await runConfigTests();
 })();
+
+async function runConfigTests() {
+  let passed = 0;
+  let total = 0;
+  configure({ only: ['rdap'] });
+  const resOnly = await check('example.com');
+  if (resOnly.resolver === 'rdap') passed++;
+  total++;
+
+  configure({ skip: ['rdap'] });
+  const resSkip = await check('this-domain-should-not-exist-12345.com');
+  if (resSkip.resolver !== 'rdap') passed++;
+  total++;
+
+  configure({ only: undefined, skip: undefined });
+
+  console.log(`Config option tests passed: ${passed}/${total}`);
+  if (passed !== total) {
+    process.exitCode = 1;
+  }
+}
