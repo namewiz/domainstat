@@ -1,25 +1,49 @@
-export interface DomainStatus {
+
+export type Availability =
+  | 'available'
+  | 'unavailable'
+  | 'unsupported'
+  | 'invalid'
+  | 'unknown';
+
+export type AdapterSource =
+  | 'validator'
+  | 'dns.host'
+  | 'dns.doh'
+  | 'rdap'
+  | 'whois.lib'
+  | 'whois.api'
+  | 'app';
+
+export interface AdapterResponse {
   domain: string;
-  availability: 'available' | 'unavailable' | 'unsupported' | 'invalid' | 'unknown';
+  availability: Availability;
   fineStatus?:
     | 'expiring_soon'
     | 'registered_not_in_use'
     | 'premium'
     | 'for_sale'
     | 'reserved';
-  source:
-    | 'validator'
-    | 'dns.host'
-    | 'dns.doh'
-    | 'rdap'
-    | 'whois.lib'
-    | 'whois.api'
-    | 'app';
+  source: AdapterSource;
+  raw: any;
+  error?: Error;
+}
+
+export interface DomainStatus {
+  domain: string;
+  availability: Availability;
+  fineStatus?:
+    | 'expiring_soon'
+    | 'registered_not_in_use'
+    | 'premium'
+    | 'for_sale'
+    | 'reserved';
+  resolver: AdapterSource;
   /**
    * Raw responses from each adapter keyed by its namespace.
    */
   raw: Record<string, any>;
-  timestamp: number;
+  error?: Error;
 }
 
 export interface CheckerAdapter {
@@ -28,7 +52,7 @@ export interface CheckerAdapter {
   check(
     domain: string,
     opts?: { signal?: AbortSignal; tldConfig?: TldConfigEntry }
-  ): Promise<DomainStatus>;
+  ): Promise<AdapterResponse>;
 }
 
 export interface TldConfigEntry {
