@@ -1,5 +1,7 @@
 import { CheckerAdapter, AdapterResponse, TldConfigEntry } from '../types.js';
 
+const DEFAULT_TIMEOUT_MS = 5000;
+
 export class RdapAdapter implements CheckerAdapter {
   namespace = 'rdap';
   private baseUrl: string;
@@ -9,11 +11,14 @@ export class RdapAdapter implements CheckerAdapter {
 
   async check(
     domain: string,
-    opts: { signal?: AbortSignal; tldConfig?: TldConfigEntry } = {}
+    opts: { timeoutMs?: number; tldConfig?: TldConfigEntry } = {}
   ): Promise<AdapterResponse> {
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const baseUrl = opts.tldConfig?.rdapServer || this.baseUrl;
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), timeoutMs);
     try {
-      const res = await fetch(`${baseUrl}${domain}`, { signal: opts.signal });
+      const res = await fetch(`${baseUrl}${domain}`, { signal: ac.signal });
       const text = await res.text();
       if (res.status === 404) {
         return {
@@ -47,6 +52,8 @@ export class RdapAdapter implements CheckerAdapter {
         raw: null,
         error: err,
       };
+    } finally {
+      clearTimeout(timer);
     }
   }
 }

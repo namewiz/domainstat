@@ -1,11 +1,17 @@
 import { CheckerAdapter, AdapterResponse } from '../types.js';
 import { promises as dns } from 'dns';
 
+const DEFAULT_TIMEOUT_MS = 3000;
+
 export class HostAdapter implements CheckerAdapter {
   namespace = 'dns.host';
-  async check(domain: string, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {
+  async check(domain: string, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const timer = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), timeoutMs)
+    );
     try {
-      await dns.resolve(domain, 'A');
+      await Promise.race([dns.resolve(domain, 'A'), timer]);
       return {
         domain,
         availability: 'unavailable',

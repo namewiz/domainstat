@@ -39,16 +39,14 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
     return validated;
   }
 
-  const ac = new AbortController();
-
   try {
     let finalError: Error | undefined;
 
     let dnsResult: AdapterResponse | null = null;
     try {
       dnsResult = isNode
-        ? await host.check(domain, { signal: ac.signal })
-        : await doh.check(domain, { signal: ac.signal });
+        ? await host.check(domain)
+        : await doh.check(domain);
     } catch (err: any) {
       dnsResult = { domain, availability: 'unknown', source: isNode ? 'dns.host' : 'dns.doh', raw: null, error: err };
     }
@@ -121,7 +119,7 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
     logger.info('domain.check.end', { domain, status: result.availability, resolver: result.resolver });
     return result;
   } finally {
-    ac.abort();
+    // nothing to cleanup
   }
 }
 

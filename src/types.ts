@@ -51,7 +51,7 @@ export interface CheckerAdapter {
   namespace: string;
   check(
     domain: string,
-    opts?: { signal?: AbortSignal; tldConfig?: TldConfigEntry }
+    opts?: { timeoutMs?: number; tldConfig?: TldConfigEntry }
   ): Promise<AdapterResponse>;
 }
 

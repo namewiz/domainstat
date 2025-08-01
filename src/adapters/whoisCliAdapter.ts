@@ -2,14 +2,17 @@ import { CheckerAdapter, AdapterResponse } from '../types.js';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
+const DEFAULT_TIMEOUT_MS = 8000;
+
 const execAsync = promisify(exec);
 
 export class WhoisCliAdapter implements CheckerAdapter {
   namespace = 'whois.lib';
-  async check(domain: string): Promise<AdapterResponse> {
+  async check(domain: string, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {
       const cmd = `whois ${domain}`;
-      const { stdout } = await execAsync(cmd, { maxBuffer: 1024 * 1024 });
+      const { stdout } = await execAsync(cmd, { maxBuffer: 1024 * 1024, timeout: timeoutMs });
       const text = stdout.toLowerCase();
       const availablePatterns = [
         'no match',

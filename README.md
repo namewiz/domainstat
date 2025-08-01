@@ -62,7 +62,7 @@ export function configure(opts: {
 
 * **Timeouts** on all network calls (configurable, e.g. 3 s for DNS, 5 s for RDAP).
 * **Retries**: simple exponential backoff for RDAP and WHOIS API (max 2 retries).
-* **AbortController** support to cancel in-flight race participants.
+* **Per-adapter timeouts** via an optional `timeoutMs` parameter.
 * **Graceful degradation**: if RDAP fails or is skipped, still attempt WHOIS library & API.
 
 ---
@@ -81,7 +81,7 @@ export function configure(opts: {
 * Expand ccTLD list to include all ccTLDs.
 * Add namespace to adapters, use it to store raw responses.
 * Implement `only` and `skip` config options, using namespaces
-* Implement per-adapter timeouts
+* ~~Implement per-adapter timeouts~~
 
 ## Running the Demo
 
