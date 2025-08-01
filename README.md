@@ -40,26 +40,30 @@ To achieve both speed and accuracy under varying environments (Node.js vs browse
 
 ```ts
 import { check, checkBatch } from './index';
-import { configure } from './index';
 
 export {
   check,
   checkBatch,
-  configure,
 };
 ```
 
 ### 5.2 Configuration
 
+Both `check` and `checkBatch` accept an optional `options` object:
+
 ```ts
-export function configure(opts: {
+interface CheckOptions {
   logger?: Logger;
-  concurrency?: number;
+  concurrency?: number; // only used by checkBatch
   /** Only run adapters whose namespace starts with one of these prefixes */
   only?: string[];
   /** Skip adapters whose namespace starts with one of these prefixes */
   skip?: string[];
-}) { … }
+  tldConfig?: TldConfigEntry;
+}
+
+check(domain: string, options?: CheckOptions);
+checkBatch(domains: string[], options?: CheckOptions);
 ```
 
 ### 5.3 Error Handling & Retries

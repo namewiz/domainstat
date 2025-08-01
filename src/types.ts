@@ -59,3 +59,13 @@ export interface TldConfigEntry {
   rdapServer?: string;
   skipRdap?: boolean;
 }
+
+export interface CheckOptions {
+  logger?: Console;
+  concurrency?: number;
+  /** Only run adapters whose namespace starts with one of these prefixes */
+  only?: string[];
+  /** Skip adapters whose namespace starts with one of these prefixes */
+  skip?: string[];
+  tldConfig?: TldConfigEntry;
+}
