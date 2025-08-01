@@ -1,10 +1,9 @@
-import { DomainStatus, TldConfigEntry } from './types.js';
+import { DomainStatus, TldConfigEntry, AdapterResponse } from './types.js';
 import { HostAdapter } from './adapters/hostAdapter.js';
 import { DohAdapter } from './adapters/dohAdapter.js';
 import { RdapAdapter } from './adapters/rdapAdapter.js';
 import { WhoisCliAdapter } from './adapters/whoisCliAdapter.js';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter.js';
-import { Cache } from './cache.js';
 import { validateDomain } from './validator.js';
 
 const isNode =
@@ -12,13 +11,11 @@ const isNode =
   process.versions != null &&
   process.versions.node != null;
 
-let cache = new Cache();
 let logger = console;
 let numWorkers = 10;
 
 
-export function configure(opts: { cache?: Cache; logger?: Console; concurrency?: number; }) {
-  if (opts.cache) cache = opts.cache;
+export function configure(opts: { logger?: Console; concurrency?: number; }) {
   if (opts.logger) logger = opts.logger;
   if (opts.concurrency) numWorkers = opts.concurrency;
 }
@@ -32,87 +29,101 @@ const whoisApi = new WhoisApiAdapter(
   typeof process !== 'undefined' ? (process.env.WHOISXML_API_KEY as string | undefined) : undefined
 );
 
-function ttlFor(status: DomainStatus['availability']) {
-  if (status === 'available') return 5 * 60 * 1000;
-  if (status === 'unavailable') return 60 * 60 * 1000;
-  return 60 * 1000;
-}
-
 export async function check(domain: string, opts: { tldConfig?: TldConfigEntry } = {}): Promise<DomainStatus> {
   logger.info('domain.check.start', { domain });
+  const raw: Record<string, any> = {};
   const validated = validateDomain(domain);
   if (validated.status) {
-    logger.info('domain.check.end', { domain, status: validated.status.availability, source: 'validator' });
-    return validated.status;
+    Object.assign(raw, validated.status.raw);
+    const result: DomainStatus = {
+      ...validated.status,
+      raw,
+    };
+    logger.info('domain.check.end', { domain, status: validated.status.availability, resolver: 'validator' });
+    return result;
   }
   opts = { ...opts, tldConfig: { ...opts.tldConfig, ...validated.config } };
-  const key = domain.toLowerCase();
-  const cached = cache.get<DomainStatus>(key);
-  if (cached) {
-    logger.info('cache.hit', { domain });
-    return cached;
-  }
 
   const ac = new AbortController();
 
   try {
-    let dnsResult: DomainStatus | null = null;
+    let finalError: Error | undefined;
+
+    let dnsResult: AdapterResponse | null = null;
     try {
       dnsResult = isNode
         ? await host.check(domain, { signal: ac.signal })
         : await doh.check(domain, { signal: ac.signal });
-      ac.abort();
-    } catch (err) {
-      logger.warn('dns.failed', { domain, error: String(err) });
+    } catch (err: any) {
+      dnsResult = { domain, availability: 'unknown', source: isNode ? 'dns.host' : 'dns.doh', raw: null, error: err };
+    }
+    raw[isNode ? host.namespace : doh.namespace] = dnsResult.raw;
+    if (dnsResult.error) {
+      logger.warn('dns.failed', { domain, error: String(dnsResult.error) });
+      finalError = dnsResult.error;
     }
 
-    if (dnsResult && dnsResult.availability === 'unavailable') {
-      cache.set(key, dnsResult, ttlFor(dnsResult.availability));
-      logger.info('domain.check.end', { domain, status: dnsResult.availability, source: dnsResult.source });
-      return dnsResult;
+    if (!dnsResult.error && dnsResult.availability === 'unavailable') {
+      const result: DomainStatus = {
+        domain,
+        availability: dnsResult.availability,
+        resolver: dnsResult.source,
+        raw,
+        error: undefined,
+      };
+      logger.info('domain.check.end', { domain, status: result.availability, resolver: result.resolver });
+      return result;
     }
 
     if (!opts.tldConfig?.skipRdap) {
-      try {
-        const rdapRes = await rdap.check(domain, { tldConfig: opts.tldConfig });
-        cache.set(key, rdapRes, ttlFor(rdapRes.availability));
-        logger.info('domain.check.end', { domain, status: rdapRes.availability, source: rdapRes.source });
-        return rdapRes;
-      } catch (err) {
-        logger.warn('rdap.failed', { domain, error: String(err) });
+      const rdapRes = await rdap.check(domain, { tldConfig: opts.tldConfig });
+      raw[rdap.namespace] = rdapRes.raw;
+      if (rdapRes.error) {
+        logger.warn('rdap.failed', { domain, error: String(rdapRes.error) });
+        finalError = rdapRes.error;
+      } else {
+        const result: DomainStatus = {
+          domain,
+          availability: rdapRes.availability,
+          resolver: rdapRes.source,
+          raw,
+          error: undefined,
+        };
+        logger.info('domain.check.end', { domain, status: result.availability, resolver: result.resolver });
+        return result;
       }
     }
 
-    let whoisRes: DomainStatus | null = null;
+    let whoisRes: AdapterResponse | null = null;
     if (isNode) {
-      try {
-        whoisRes = await whoisCli.check(domain);
-      } catch (err) {
-        logger.warn('whois-lib.failed', { domain, error: String(err) });
-      }
+      whoisRes = await whoisCli.check(domain);
     } else {
-      try {
-        whoisRes = await whoisApi.check(domain);
-      } catch (err) {
-        logger.warn('whois-api.failed', { domain, error: String(err) });
-      }
+      whoisRes = await whoisApi.check(domain);
     }
-
-    if (whoisRes) {
-      cache.set(key, whoisRes, ttlFor(whoisRes.availability));
-      logger.info('domain.check.end', { domain, status: whoisRes.availability, source: whoisRes.source });
-      return whoisRes;
+    raw[whoisRes.source] = whoisRes.raw;
+    if (whoisRes.error) {
+      logger.warn(isNode ? 'whois.lib.failed' : 'whois.api.failed', { domain, error: String(whoisRes.error) });
+      finalError = whoisRes.error;
+    } else {
+      const result: DomainStatus = {
+        domain,
+        availability: whoisRes.availability,
+        resolver: whoisRes.source,
+        raw,
+        error: undefined,
+      };
+      logger.info('domain.check.end', { domain, status: result.availability, resolver: result.resolver });
+      return result;
     }
 
     const result: DomainStatus = {
       domain,
       availability: 'unknown',
-      source: 'app',
-      raw: null,
-      timestamp: Date.now(),
+      resolver: 'app',
+      raw,
+      error: finalError,
     };
-    cache.set(key, result, ttlFor(result.availability));
-    logger.info('domain.check.end', { domain, status: result.availability, source: result.source });
+    logger.info('domain.check.end', { domain, status: result.availability, resolver: result.resolver });
     return result;
   } finally {
     ac.abort();

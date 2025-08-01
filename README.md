@@ -53,26 +53,12 @@ export {
 
 ```ts
 export function configure(opts: {
-  cache?: Cache;
   logger?: Logger;
   concurrency?: number;
 }) { … }
 ```
 
-### 5.3 Caching Strategy
-
-* **Pluggable** via a cache object with `get`/`set`; default = in-memory LRU.
-* **Key**: `domain.toLowerCase()`
-* **TTL**:
-
-  * `available`: 5 minutes
-  * `unavailable`: 1 hour
-  * `unsupported`: never cached (or very short)
-* **Eviction**: LRU with max size (e.g. 10k entries).
-
-
-
-### 5.4 Error Handling & Retries
+### 5.3 Error Handling & Retries
 
 * **Timeouts** on all network calls (configurable, e.g. 3 s for DNS, 5 s for RDAP).
 * **Retries**: simple exponential backoff for RDAP and WHOIS API (max 2 retries).
@@ -93,7 +79,7 @@ export function configure(opts: {
   * .ng registry https://whois.nic.net.ng/domains?name=jiji.ng&exactMatch=true
 * Fix whois fallback, perhaps using whois-json library.
 * Expand ccTLD list to include all ccTLDs.
-* Add namespace to adapters, use it to store responses.
+* Add namespace to adapters, use it to store raw responses.
 * Implement `only` and `skip` config options, using namespaces
 * Implement per-adapter timeouts
 
