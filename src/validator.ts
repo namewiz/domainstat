@@ -1,61 +1,57 @@
-import tlds from './tlds.json' assert { type: 'json' };
+import tlds from "./tlds.json" assert { type: "json" };
 
 const tldMap: Record<string, string | boolean> = {
   ...(tlds as any).popular,
   ...(tlds as any).gTLDs,
   ...(tlds as any).ccTLDs,
 };
-import { DomainStatus, TldConfigEntry } from './types.js';
-import { parse } from 'tldts';
+import { DomainStatus } from "./types.js";
+import { parse } from "tldts";
 
-export function validateDomain(domain: string): {
-  config: TldConfigEntry | null;
-  status: DomainStatus | null;
-} {
+export function validateDomain(domain: string): DomainStatus {
   const parsed = parse(domain.toLowerCase());
-  if (!parsed.domain || !parsed.publicSuffix || domain.trim() !== parsed.domain) {
+  if (
+    !parsed.domain ||
+    !parsed.publicSuffix ||
+    domain.trim() !== parsed.domain
+  ) {
     return {
-      config: null,
-      status: {
-        domain,
-        availability: 'invalid',
-        resolver: 'validator',
-        raw: { validator: null },
-        error: undefined,
-      },
+      domain,
+      availability: "invalid",
+      resolver: "validator",
+      raw: { validator: null },
+      error: new Error(
+        `Parse error: input: ${domain}, parsedName: ${parsed.domain}, tld: ${parsed.publicSuffix}`
+      ),
     };
   }
 
   if (!parsed.isIcann) {
     return {
-      config: null,
-      status: {
-        domain,
-        availability: 'unsupported',
-        resolver: 'validator',
-        raw: { validator: null },
-        error: undefined,
-      },
+      domain,
+      availability: "unsupported",
+      resolver: "validator",
+      raw: { validator: null },
+      error: new Error(`TLD is not ICANN supported`),
     };
   }
 
   const suffix = parsed.publicSuffix;
   const val = tldMap[suffix];
-  if(!val) {
+  if (!val) {
     return {
-      config: null,
-      status: {
-        domain,
-        availability: 'unsupported',
-        resolver: 'validator',
-        raw: { validator: null },
-        error: undefined,
-      },
+      domain,
+      availability: "unsupported",
+      resolver: "validator",
+      raw: { validator: null },
+      error: Error(`The library does not support the tld .${suffix}`),
     };
   }
-  
-  const cfg: TldConfigEntry =
-    suffix && val ? (typeof val === 'string' ? { rdapServer: val } : {}) : {};
 
-  return { config: cfg, status: null };
+  return {
+    domain,
+    availability: "unknown",
+    resolver: "validator",
+    raw: { validator: null },
+  };
 }

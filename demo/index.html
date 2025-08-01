@@ -57,9 +57,9 @@
     <tbody id="results"></tbody>
   </table>
 
-  <script type="module" src="../dist/index.js"></script>
+  <script type="module" src="./index.js"></script>
   <script type="module">
-    import { check } from '../dist/index.js';
+    import { check } from './index.js';
 
     function selectedTlds() {
       return Array.from(document.querySelectorAll('input.tld:checked')).map(c => c.value);

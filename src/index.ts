@@ -33,16 +33,11 @@ export async function check(domain: string, opts: { tldConfig?: TldConfigEntry }
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
   const validated = validateDomain(domain);
-  if (validated.status) {
-    Object.assign(raw, validated.status.raw);
-    const result: DomainStatus = {
-      ...validated.status,
-      raw,
-    };
-    logger.info('domain.check.end', { domain, status: validated.status.availability, resolver: 'validator' });
-    return result;
+  if (validated.error) {
+    logger.error("validation error: ", validated.error.message)
+    logger.info('domain.check.end', { domain, status: validated.availability, resolver: 'validator', error: validated.error.message });
+    return validated;
   }
-  opts = { ...opts, tldConfig: { ...opts.tldConfig, ...validated.config } };
 
   const ac = new AbortController();
 
