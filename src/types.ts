@@ -15,6 +15,12 @@ export type AdapterSource =
   | 'whois.api'
   | 'app';
 
+export enum Platform {
+  AUTO = 'auto',
+  NODE = 'node',
+  BROWSER = 'browser',
+}
+
 export interface AdapterResponse {
   domain: string;
   availability: Availability;
@@ -69,4 +75,8 @@ export interface CheckOptions {
   /** Skip adapters whose namespace starts with one of these prefixes */
   skip?: string[];
   tldConfig?: TldConfigEntry;
+  /**
+   * Platform to run adapters on. Defaults to auto-detect based on environment.
+   */
+  platform?: Platform;
 }

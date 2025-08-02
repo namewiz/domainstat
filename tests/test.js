@@ -84,6 +84,14 @@ async function runConfigTests() {
   if (resSkip.resolver !== 'rdap') passed++;
   total++;
 
+  const resNode = await check('example.com', { platform: 'node', only: ['dns'] });
+  if (resNode.resolver === 'dns.host') passed++;
+  total++;
+
+  const resBrowser = await check('example.com', { platform: 'browser', only: ['dns'] });
+  if (resBrowser.resolver === 'dns.doh') passed++;
+  total++;
+
   console.log(`Config option tests passed: ${passed}/${total}`);
   if (passed !== total) {
     process.exitCode = 1;
