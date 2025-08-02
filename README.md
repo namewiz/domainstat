@@ -54,6 +54,7 @@ Both `check` and `checkBatch` accept an optional `options` object:
 ```ts
 interface CheckOptions {
   logger?: Logger;
+  verbose?: boolean;
   concurrency?: number; // only used by checkBatch
   /** Only run adapters whose namespace starts with one of these prefixes */
   only?: string[];
@@ -65,6 +66,8 @@ interface CheckOptions {
 check(domain: string, options?: CheckOptions);
 checkBatch(domains: string[], options?: CheckOptions);
 ```
+
+Logging is disabled by default; pass `verbose: true` to enable log output.
 
 ### 5.3 Error Handling & Retries
 

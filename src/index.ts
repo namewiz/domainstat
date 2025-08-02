@@ -20,6 +20,12 @@ const whoisApi = new WhoisApiAdapter(
   typeof process !== 'undefined' ? (process.env.WHOISXML_API_KEY as string | undefined) : undefined
 );
 
+const noopLogger: Pick<Console, 'info' | 'warn' | 'error'> = {
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+};
+
 function adapterAllowed(ns: string, opts: CheckOptions): boolean {
   if (opts.only && !opts.only.some((p) => ns.startsWith(p))) {
     return false;
@@ -31,7 +37,9 @@ function adapterAllowed(ns: string, opts: CheckOptions): boolean {
 }
 
 export async function check(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
-  const logger = opts.logger ?? console;
+  const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose
+    ? opts.logger ?? console
+    : noopLogger;
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
   const validated = validateDomain(domain);
