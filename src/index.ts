@@ -1,4 +1,10 @@
-import { DomainStatus, TldConfigEntry, AdapterResponse, CheckOptions } from './types.js';
+import {
+  DomainStatus,
+  TldConfigEntry,
+  AdapterResponse,
+  CheckOptions,
+  Platform,
+} from './types.js';
 import { HostAdapter } from './adapters/hostAdapter.js';
 import { DohAdapter } from './adapters/dohAdapter.js';
 import { RdapAdapter } from './adapters/rdapAdapter.js';
@@ -6,10 +12,13 @@ import { WhoisCliAdapter } from './adapters/whoisCliAdapter.js';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter.js';
 import { validateDomain } from './validator.js';
 
-const isNode =
-  typeof process !== 'undefined' &&
-  process.versions != null &&
-  process.versions.node != null;
+function detectNode(): boolean {
+  return (
+    typeof process !== 'undefined' &&
+    process.versions != null &&
+    process.versions.node != null
+  );
+}
 
 const host = new HostAdapter();
 const doh = new DohAdapter();
@@ -42,6 +51,8 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
     : noopLogger;
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
+  const platform = opts.platform ?? Platform.AUTO;
+  const isNode = platform === Platform.AUTO ? detectNode() : platform === Platform.NODE;
   const validated = validateDomain(domain);
   if (validated.error) {
     logger.error("validation error: ", validated.error.message)

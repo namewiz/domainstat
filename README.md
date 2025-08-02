@@ -61,6 +61,8 @@ interface CheckOptions {
   /** Skip adapters whose namespace starts with one of these prefixes */
   skip?: string[];
   tldConfig?: TldConfigEntry;
+  /** Select platform. Defaults to 'auto' */
+  platform?: 'auto' | 'node' | 'browser';
 }
 
 check(domain: string, options?: CheckOptions);
@@ -68,6 +70,8 @@ checkBatch(domains: string[], options?: CheckOptions);
 ```
 
 Logging is disabled by default; pass `verbose: true` to enable log output.
+The `platform` option lets you override automatic environment detection and force
+Node or browser-specific adapters.
 
 ### 5.3 Error Handling & Retries
 
