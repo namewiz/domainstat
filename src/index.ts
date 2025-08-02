@@ -1,25 +1,18 @@
 import {
   DomainStatus,
-  TldConfigEntry,
   AdapterResponse,
   CheckOptions,
   Platform,
-} from './types.js';
-import { HostAdapter } from './adapters/hostAdapter.js';
-import { DohAdapter } from './adapters/dohAdapter.js';
-import { RdapAdapter } from './adapters/rdapAdapter.js';
-import { WhoisCliAdapter } from './adapters/whoisCliAdapter.js';
-import { WhoisApiAdapter } from './adapters/whoisApiAdapter.js';
-import { validateDomain } from './validator.js';
+} from './types';
+export type { DomainStatus } from './types';
+import { HostAdapter } from './adapters/hostAdapter';
+import { DohAdapter } from './adapters/dohAdapter';
+import { RdapAdapter } from './adapters/rdapAdapter';
+import { WhoisCliAdapter } from './adapters/whoisCliAdapter';
+import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
+import { validateDomain } from './validator';
 
-function detectNode(): boolean {
-  return (
-    typeof process !== 'undefined' &&
-    process.versions != null &&
-    process.versions.node != null
-  );
-}
-
+const MAX_CONCURRENCY = 10;
 const host = new HostAdapter();
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
@@ -28,12 +21,19 @@ const whoisApi = new WhoisApiAdapter(
   typeof process !== 'undefined' ? (process.env.WHOISFREAKS_API_KEY as string | undefined) : undefined,
   typeof process !== 'undefined' ? (process.env.WHOISXML_API_KEY as string | undefined) : undefined
 );
-
 const noopLogger: Pick<Console, 'info' | 'warn' | 'error'> = {
   info: () => {},
   warn: () => {},
   error: () => {},
 };
+
+function detectNode(): boolean {
+  return (
+    typeof process !== 'undefined' &&
+    process.versions != null &&
+    process.versions.node != null
+  );
+}
 
 function adapterAllowed(ns: string, opts: CheckOptions): boolean {
   if (opts.only && !opts.only.some((p) => ns.startsWith(p))) {
@@ -165,7 +165,7 @@ export async function checkBatch(domains: string[], opts: CheckOptions = {}): Pr
     }
   };
 
-  const numWorkers = opts.concurrency ?? 10;
+  const numWorkers = opts.concurrency ?? MAX_CONCURRENCY;
   for (let i = 0; i < numWorkers; i++) {
     workers.push(worker());
   }
@@ -173,4 +173,3 @@ export async function checkBatch(domains: string[], opts: CheckOptions = {}): Pr
   return results;
 }
 
-export type { DomainStatus } from './types.js';

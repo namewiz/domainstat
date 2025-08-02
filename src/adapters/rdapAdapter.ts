@@ -1,4 +1,4 @@
-import { CheckerAdapter, AdapterResponse, TldConfigEntry } from '../types.js';
+import { CheckerAdapter, AdapterResponse, TldConfigEntry } from '../types';
 
 const DEFAULT_TIMEOUT_MS = 600;
 

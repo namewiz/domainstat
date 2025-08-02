@@ -93,10 +93,7 @@ Node or browser-specific adapters.
 * Implement rdap overrides for TLDs that are not rdap conformant like .ng
   * .ng registry https://whois.nic.net.ng/domains?name=jiji.ng&exactMatch=true
 * Fix whois fallback, perhaps using whois-json library.
-* Expand ccTLD list to include all ccTLDs.
-* Add namespace to adapters, use it to store raw responses.
-* ~~Implement `only` and `skip` config options, using namespaces~~
-* ~~Implement per-adapter timeouts~~
+* Add streaming API for batch calls
 
 ## Running the Demo
 

@@ -1,4 +1,4 @@
-import { CheckerAdapter, AdapterResponse } from '../types.js';
+import { CheckerAdapter, AdapterResponse } from '../types';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 

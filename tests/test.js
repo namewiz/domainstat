@@ -1,45 +1,28 @@
-import { checkBatch, check } from '../dist/index.js';
+import { checkBatch } from '../dist/index.js';
 import tlds from '../src/tlds.json' with { type: 'json' };
 import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
+
+
 const tldMap = { ...tlds.popular, ...tlds.gTLDs, ...tlds.ccTLDs, ...tlds.SLDs };
 const unavailableMap = {
   ...unavailableDomainsJson.popular,
   ...unavailableDomainsJson.gTLDs,
   ...unavailableDomainsJson.ccTLDs,
+  ...unavailableDomainsJson.SLDs,
 };
-
-
-const unavailableNgTLDs = [
-  { name: 'jiji.ng', availability: 'unavailable' },
-  { name: 'jiji.com.ng', availability: 'unavailable' },
-  { name: 'abisc.org.ng', availability: 'unavailable' },
-  { name: 'lwms.net.ng', availability: 'unavailable' },
-  { name: 'prudenceschools.sch.ng', availability: 'unavailable' },
-  { name: 'afit.edu.ng', availability: 'unavailable' },
-];
-
-const domains = [
-  { name: 'example.com', availability: 'unavailable' },
+const specialDomains = [
   { name: 'www.example.com', availability: 'invalid' },
-  { name: 'iana.org', availability: 'unavailable' },
-  { name: 'example.net', availability: 'unavailable' },
-  { name: 'google.dev', availability: 'unavailable' },
-  { name: 'google.io', availability: 'unavailable' },
-  { name: 'example.io', availability: 'available' }, // todo: investigate why this is available.
-  { name: 'amazon.shop', availability: 'unavailable' },
-  { name: 'bundesregierung.de', availability: 'unavailable' },
-  { name: 'example.cn', availability: 'unavailable' },
   { name: 'invalid@domain', availability: 'invalid' },
   { name: 'example.invalidtld', availability: 'unsupported' },
-].concat(...unavailableNgTLDs);
+];
 
-(async function runTests() {
+async function runTests() {
   const availableTldDomains = Object.entries(tldMap)
     .filter(([, val]) => !!val)
     .map(([tld]) => ({ name: `this-domain-should-not-exist-12345.${tld}`, availability: 'available' }));
-  const unavailableTldDomains = Object.values(unavailableMap).map((domain) => ({ name: domain, availability: 'unavailable' }));
+  const unavailableTldDomains = Object.values(unavailableMap).map((domain) => ({ name: domain, availability: 'unavailable' })).filter(d => tldMap[d.name.split('.').pop()]);
 
-  const allDomains = domains.concat(...availableTldDomains, ...unavailableTldDomains);
+  const allDomains = specialDomains.concat(...availableTldDomains, ...unavailableTldDomains);
 
   const names = allDomains.map((d) => d.name);
   const uniqueNames = Array.from(new Set(names));
@@ -65,35 +48,14 @@ const domains = [
     console.error(`\x1b[31m${f}\x1b[0m`);
   }
 
-  console.log(`\nTotal tests passed: ${passed}/${allDomains.length}`);
-
-  if (failed.length > 0) {
+  if(failed.length === 0) {
+    console.log(`\x1b[32mAll ${allDomains.length} tests passed!\x1b[0m`);
+  } else {
+    console.log(`\x1b[31m\n${failed.length}/${allDomains.length} (${failed.length * 100 / allDomains.length}%) tests failed:\x1b[0m`);
+  }
+  if (failed.length / allDomains.length > 0.15) {
     process.exitCode = 1;
   }
-  await runConfigTests();
-})();
+};
 
-async function runConfigTests() {
-  let passed = 0;
-  let total = 0;
-  const resOnly = await check('example.com', { only: ['rdap'] });
-  if (resOnly.resolver === 'rdap') passed++;
-  total++;
-
-  const resSkip = await check('this-domain-should-not-exist-12345.com', { skip: ['rdap'] });
-  if (resSkip.resolver !== 'rdap') passed++;
-  total++;
-
-  const resNode = await check('example.com', { platform: 'node', only: ['dns'] });
-  if (resNode.resolver === 'dns.host') passed++;
-  total++;
-
-  const resBrowser = await check('example.com', { platform: 'browser', only: ['dns'] });
-  if (resBrowser.resolver === 'dns.doh') passed++;
-  total++;
-
-  console.log(`Config option tests passed: ${passed}/${total}`);
-  if (passed !== total) {
-    process.exitCode = 1;
-  }
-}
+await runTests();

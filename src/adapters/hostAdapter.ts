@@ -1,7 +1,7 @@
-import { CheckerAdapter, AdapterResponse } from '../types.js';
+import { CheckerAdapter, AdapterResponse } from '../types';
 import { promises as dns } from 'dns';
 
-const DEFAULT_TIMEOUT_MS = 100;
+const DEFAULT_TIMEOUT_MS = 300;
 
 export class HostAdapter implements CheckerAdapter {
   namespace = 'dns.host';
