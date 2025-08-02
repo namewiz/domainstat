@@ -27,7 +27,6 @@ export class HostAdapter implements CheckerAdapter {
           raw: false,
         };
       }
-      console.error("dns.host error: ", err.code)
       // TODO: This is only the case for some TLDs, limit to TLDs.
       // E.g. for .lc, timeout => available.
       // if(err.code === 'ESERVFAIL' || err.code === 'ETIMEOUT') {

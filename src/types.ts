@@ -62,6 +62,7 @@ export interface TldConfigEntry {
 
 export interface CheckOptions {
   logger?: Console;
+  verbose?: boolean;
   concurrency?: number;
   /** Only run adapters whose namespace starts with one of these prefixes */
   only?: string[];
