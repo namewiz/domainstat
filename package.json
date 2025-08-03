@@ -1,6 +1,6 @@
 {
   "name": "fast-domain-status",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Extremely fast domain status checker library that a combination DOH, HOST, PING, RDAP, WHOIS etc",
   "type": "module",
   "main": "./dist/index.js",
@@ -9,8 +9,18 @@
     "test": "npm run build && node ./tests/test.js",
     "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justiceo/fast-domain-status.git"
+  },
+  "bugs": {
+    "url": "https://github.com/justiceo/fast-domain-status/issues"
+  },
+  "author": "Justice Ogbonna",
   "keywords": [],
-  "author": "",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "license": "ISC",
   "dependencies": {
     "tldts": "^7.0.10"

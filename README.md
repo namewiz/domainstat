@@ -1,8 +1,7 @@
-# Domain Status Checker Library — Design Document
+# Fast Domain Status Checker
 
----
 
-## 1. Overview & Motivation
+## Overview
 
 A **Domain Status Checker** library provides a fast, reliable way to determine whether a given domain name is:
 
@@ -20,11 +19,7 @@ To achieve both speed and accuracy under varying environments (Node.js vs browse
 2. **Tier&nbsp;2 – RDAP**, when available.
 3. **Tier&nbsp;3 – WHOIS**: local WHOIS library or a paid WHOIS API.
 
----
-
-## 2. Requirements & Features
-
-### 2.1 Functional Requirements
+## Requirements 
 
 * **Fast “first-good-win”** DNS probing (cancel slower probes once a record is found).
 * **Three-tier fallback**: DNS (host/DOH) → RDAP → WHOIS library/WHOIS API.
@@ -34,9 +29,7 @@ To achieve both speed and accuracy under varying environments (Node.js vs browse
 * **Batch mode**: concurrent checks with configurable concurrency limit.
 * **Extended statuses**: `expiring_soon`, `premium`, `reserved`, etc.
 
----
-
-## 5 Public API
+## Public API
 
 ```ts
 import { check, checkBatch } from './index';
@@ -47,7 +40,7 @@ export {
 };
 ```
 
-### 5.2 Configuration
+### Configuration
 
 Both `check` and `checkBatch` accept an optional `options` object:
 
@@ -73,7 +66,7 @@ Logging is disabled by default; pass `verbose: true` to enable log output.
 The `platform` option lets you override automatic environment detection and force
 Node or browser-specific adapters.
 
-### 5.3 Error Handling & Retries
+### Error Handling & Retries
 
 * **Timeouts** on all network calls (configurable, e.g. 3 s for DNS, 5 s for RDAP).
 * **Retries**: simple exponential backoff for RDAP and WHOIS API (max 2 retries).
