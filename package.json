@@ -1,6 +1,7 @@
 {
-  "name": "fast-status",
-  "version": "1.0.0",
+  "name": "fast-domain-status",
+  "version": "0.1.0",
+  "description": "Extremely fast domain status checker library that a combination DOH, HOST, PING, RDAP, WHOIS etc",
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
@@ -11,7 +12,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Domain status checker library",
   "dependencies": {
     "tldts": "^7.0.10"
   },
