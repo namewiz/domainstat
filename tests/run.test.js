@@ -1,6 +1,7 @@
 import test from 'ava';
 import { checkBatchStream } from '../dist/index.js';
 import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
+import tldsJson from '../src/tlds.json' with { type: 'json' };
 
 const unavailableMap = {
   ...unavailableDomainsJson.popular,
@@ -34,7 +35,14 @@ async function runTest(domains, opts = {}) {
   return { pass, total: uniqueNames.length };
 }
 
-const testTlds = ['com', 'net', 'org', 'info', 'dev'];
+const tldMap = {
+  ...tldsJson.popular,
+  ...tldsJson.gTLDs,
+  ...tldsJson.ccTLDs,
+  ...tldsJson.SLDs,
+};
+
+const testTlds = Object.keys(tldMap).filter((tld) => unavailableMap[tld]);
 
 test.serial('validator tests', async (t) => {
   const specialDomains = [
