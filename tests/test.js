@@ -28,7 +28,7 @@ async function runTests() {
   const expectedMap = Object.fromEntries(allDomains.map((d) => [d.name, d.availability]));
   const uniqueNames = Array.from(new Set(Object.keys(expectedMap)));
   let passed = 0;
-  const failed = [];
+  let failed = 0;
 
   for await (const res of checkBatchStream(uniqueNames)) {
     const expected = expectedMap[res.domain];
@@ -37,19 +37,21 @@ async function runTests() {
       console.log(`PASSED: ${msg}`);
       passed++;
     } else {
-      const failMsg = `FAILED: ${msg}\n\tError: ${res.error}`;
-      failed.push(failMsg);
+      const failMsg = `FAILED: ${msg}\n\t${res.error}`;
       console.error(`\x1b[31m${failMsg}\x1b[0m`);
+      failed++;
     }
   }
 
   const total = uniqueNames.length;
-  if (failed.length === 0) {
+  if (failed === 0) {
     console.log(`\x1b[32mAll ${total} tests passed!\x1b[0m`);
-  } else {
-    console.log(`\x1b[31m\n${failed.length}/${total} (${((failed.length * 100) / total).toFixed(2)}%) tests failed:\x1b[0m`);
+  } 
+  else if (passed / total >= 0.85) {
+    console.log(`\x1b[32m\nPassable: ${failed}/${total} (${((failed * 100) / total).toFixed(2)}%) tests failed:\x1b[0m`);
   }
-  if (failed.length / total > 0.15) {
+  else {
+    console.log(`\x1b[31m\n${failed}/${total} (${((failed * 100) / total).toFixed(2)}%) tests failed:\x1b[0m`);
     process.exitCode = 1;
   }
 }
