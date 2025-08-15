@@ -38,12 +38,16 @@ export class HostAdapter implements CheckerAdapter {
       //     raw: false,
       //   };
       // }
+
+      const isTimeout = err.killed && err.signal === 'SIGTERM' && err.code === null;
       return {
         domain,
         availability: 'unknown',
         source: 'dns.host',
         raw: null,
-        error: err,
+        error: isTimeout
+          ? new Error(`Timed out after ${timeoutMs}ms`)
+          : err,
       };
     }
   }
