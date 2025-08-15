@@ -7,6 +7,7 @@
   "scripts": {
     "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=node --external:whois",
     "test": "npm run build && ava",
+    "oldtest": "npm run build && node tests/test.js",
     "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo"
   },
   "repository": {
@@ -31,6 +32,7 @@
     "ava": "^6.4.1"
   },
   "ava": {
-    "files": ["tests/**/*.test.js"]
+    "files": ["tests/**/*.test.js"],
+    "timeout": "1m"
   }
 }

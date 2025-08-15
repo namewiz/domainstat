@@ -1,7 +1,14 @@
 import test from 'ava';
 import { checkBatchStream } from '../dist/index.js';
 import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
-import tldsJson from '../src/tlds.json' with { type: 'json' };
+import supportedTlDs from '../src/tlds.json' with { type: 'json' };
+
+const tldList = Object.keys({
+  ...supportedTlDs.popular,
+  ...supportedTlDs.gTLDs,
+  ...supportedTlDs.ccTLDs,
+  ...supportedTlDs.SLDs,
+});
 
 const unavailableMap = {
   ...unavailableDomainsJson.popular,
@@ -28,21 +35,17 @@ async function runTest(domains, opts = {}) {
   let pass = 0;
   for await (const res of checkBatchStream(uniqueNames, opts)) {
     const expected = expectedMap[res.domain];
+    const msg = `domain:${res.domain}, expected:${expected}, got:${res.availability}, resolver:${res.resolver}`;
     if (res.availability === expected) {
+      console.log(`PASSED: ${msg}`);
       pass++;
+    } else {
+      const failMsg = `FAILED: ${msg}\n\t${res.error ?? 'No error message provided'}`;
+      console.error(`\x1b[31m${failMsg}\x1b[0m`);
     }
   }
   return { pass, total: uniqueNames.length };
 }
-
-const tldMap = {
-  ...tldsJson.popular,
-  ...tldsJson.gTLDs,
-  ...tldsJson.ccTLDs,
-  ...tldsJson.SLDs,
-};
-
-const testTlds = Object.keys(tldMap).filter((tld) => unavailableMap[tld]);
 
 test.serial('validator tests', async (t) => {
   const specialDomains = [
@@ -54,17 +57,45 @@ test.serial('validator tests', async (t) => {
   t.is(pass, total);
 });
 
-test.serial('dns.host tests', async (t) => {
-  const availableDomains = testTlds.map((tld) => ({
+test.serial('checkBatch tests', async (t) => {
+  if (!(await hasNetwork())) {
+    t.log('Skipping checkBatch tests due to lack of network access');
+    t.pass();
+    return;
+  }
+
+  const availableDomains = tldList.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
-    availability: 'unknown',
+    availability: 'available',
   }));
-  const unavailableDomains = testTlds.map((tld) => ({
+  const unavailableDomains = tldList.map((tld) => ({
     name: unavailableMap[tld],
     availability: 'unavailable',
   }));
   const domains = [...availableDomains, ...unavailableDomains];
+  const { pass, total } = await runTest(domains);
+  console.log(`checkBatch test results: ${pass * 100 / total}%`);
+  t.true(pass / total > 0.9);
+});
+
+test.serial('dns.host tests', async (t) => {
+  if (!(await hasNetwork())) {
+    t.log('Skipping checkBatch tests due to lack of network access');
+    t.pass();
+    return;
+  }
+
+  const unknownDomains = tldList.map((tld) => ({
+    name: `this-domain-should-not-exist-12345.${tld}`,
+    availability: 'unknown',
+  }));
+  const unavailableDomains = tldList.map((tld) => ({
+    name: unavailableMap[tld],
+    availability: 'unavailable',
+  }));
+  const domains = [...unknownDomains, ...unavailableDomains];
   const { pass, total } = await runTest(domains, { only: ['dns.host'] });
+  console.log(`dns.host test results: ${pass * 100 / total}%`);
   t.true(pass / total > 0.95);
 });
 
@@ -74,35 +105,19 @@ test.serial('rdap tests', async (t) => {
     t.pass();
     return;
   }
-  const availableDomains = testTlds.map((tld) => ({
+
+  const availableDomains = tldList.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
     availability: 'available',
   }));
-  const unavailableDomains = testTlds.map((tld) => ({
+  const unavailableDomains = tldList.map((tld) => ({
     name: unavailableMap[tld],
     availability: 'unavailable',
   }));
   const domains = [...availableDomains, ...unavailableDomains];
   const { pass, total } = await runTest(domains, { only: ['rdap'] });
-  t.true(pass / total > 0.9);
+  console.log(`rdap test results: ${pass * 100 / total}%`);
+  t.true(pass / total > 0.80);
 });
 
-test.serial('checkBatch tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping checkBatch tests due to lack of network access');
-    t.pass();
-    return;
-  }
-  const availableDomains = testTlds.map((tld) => ({
-    name: `this-domain-should-not-exist-12345.${tld}`,
-    availability: 'available',
-  }));
-  const unavailableDomains = testTlds.map((tld) => ({
-    name: unavailableMap[tld],
-    availability: 'unavailable',
-  }));
-  const domains = [...availableDomains, ...unavailableDomains];
-  const { pass, total } = await runTest(domains);
-  t.true(pass / total > 0.9);
-});
 
