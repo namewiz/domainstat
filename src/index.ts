@@ -12,6 +12,7 @@ import { WhoisCliAdapter } from './adapters/whoisCliAdapter';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
 import { validateDomain } from './validator';
 import { parse } from 'tldts';
+import { getTldAdapter } from './tldAdapters';
 
 const MAX_CONCURRENCY = 10;
 const host = new HostAdapter();
@@ -67,12 +68,13 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
     return validated;
   }
   const name = parsed.domain!;
+  const tldAdapter = getTldAdapter(parsed.publicSuffix);
 
   try {
     let finalError: Error | undefined;
 
     let dnsResult: AdapterResponse | null = null;
-    const dnsAdapter = isNode ? host : doh;
+    const dnsAdapter = tldAdapter?.dns ?? (isNode ? host : doh);
     if (adapterAllowed(dnsAdapter.namespace, opts)) {
       try {
         dnsResult = await dnsAdapter.check(parsed);
@@ -104,9 +106,10 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
       return result;
     }
 
-    if (!opts.tldConfig?.skipRdap && adapterAllowed(rdap.namespace, opts)) {
-      const rdapRes = await rdap.check(parsed, { tldConfig: opts.tldConfig });
-      raw[rdap.namespace] = rdapRes.raw;
+    const rdapAdapter = tldAdapter?.rdap ?? rdap;
+    if (!opts.tldConfig?.skipRdap && adapterAllowed(rdapAdapter.namespace, opts)) {
+      const rdapRes = await rdapAdapter.check(parsed, { tldConfig: opts.tldConfig });
+      raw[rdapAdapter.namespace] = rdapRes.raw;
       if (rdapRes.error) {
         logger.warn('rdap.failed', { domain: name, error: String(rdapRes.error) });
         finalError = rdapRes.error;
@@ -124,12 +127,15 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
     }
 
     let whoisRes: AdapterResponse | null = null;
-    const whoisAdapter = isNode ? whoisCli : whoisApi;
+    const whoisAdapter = tldAdapter?.whois ?? (isNode ? whoisCli : whoisApi);
     if (adapterAllowed(whoisAdapter.namespace, opts)) {
       whoisRes = await whoisAdapter.check(parsed);
       raw[whoisAdapter.namespace] = whoisRes.raw;
       if (whoisRes.error) {
-        logger.warn(isNode ? 'whois.lib.failed' : 'whois.api.failed', { domain: name, error: String(whoisRes.error) });
+        logger.warn(
+          tldAdapter?.whois ? 'whois.tld.failed' : isNode ? 'whois.lib.failed' : 'whois.api.failed',
+          { domain: name, error: String(whoisRes.error) }
+        );
         finalError = whoisRes.error;
       } else {
         const result: DomainStatus = {
