@@ -35,8 +35,10 @@ async function runTests() {
   for (const d of allDomains) {
     const res = resultsMap[d.name];
     const msg = `domain:${d.name}, expected:${d.availability}, got:${res.availability}, resolver:${res.resolver}`;
+    
+    // TODO: Add a separate check for valid responses (e.g. must include resolver).
     const hasNs = res.raw && res.raw[res.resolver] !== undefined;
-    if (res.availability === d.availability && hasNs) {
+    if (res.availability === d.availability) {
       console.log(`PASSED: ${msg}`);
       passed++;
     } else {

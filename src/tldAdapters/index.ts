@@ -1,20 +1,20 @@
 import { CheckerAdapter } from '../types';
-import { NgRdapWhoisAdapter } from './ngAdapter';
+import { NgAdapter } from './ngAdapter';
 
-export interface TldAdapterSet {
+export interface TldAdapter {
   dns?: CheckerAdapter;
   rdap?: CheckerAdapter;
   whois?: CheckerAdapter;
 }
 
-const ngRdap = new NgRdapWhoisAdapter('rdap', 'rdap.ng');
-const ngWhois = new NgRdapWhoisAdapter('whois.api', 'whois.ng');
-
-export const tldAdapters: Record<string, TldAdapterSet> = {
-  ng: { rdap: ngRdap, whois: ngWhois },
+export const tldAdapters: Record<string, TldAdapter> = {
+  ng: { rdap: new NgAdapter('rdap', 'rdap.ng')},
+  'com.ng': { rdap: new NgAdapter('rdap', 'rdap.ng')},
+  'org.ng': { rdap: new NgAdapter('rdap', 'rdap.ng')},
+  'net.ng': { rdap: new NgAdapter('rdap', 'rdap.ng')},
 };
 
-export function getTldAdapter(suffix?: string): TldAdapterSet | undefined {
+export function getTldAdapter(suffix?: string): TldAdapter | undefined {
   if (!suffix) return undefined;
   const lower = suffix.toLowerCase();
   if (tldAdapters[lower]) return tldAdapters[lower];

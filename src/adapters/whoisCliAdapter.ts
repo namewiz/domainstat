@@ -18,6 +18,7 @@ export class WhoisCliAdapter implements CheckerAdapter {
       const availablePatterns = [
         'no match',
         'not found',
+        'no object found',
         'no entries found',
         'status: available',
       ];
