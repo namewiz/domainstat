@@ -28,6 +28,7 @@ export class WhoisCliAdapter implements CheckerAdapter {
         'no match',
         'not found',
         'no object found',
+        'no data found',
         'no entries found',
         'status: available',
       ];
@@ -39,6 +40,7 @@ export class WhoisCliAdapter implements CheckerAdapter {
         raw: stdout,
       };
     } catch (err: any) {
+      // TODO: Investigate the command failing with undefined error.
       const isTimeout = err.killed && err.signal === 'SIGTERM' && err.code === null;
       return {
         domain,
