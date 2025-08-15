@@ -1,3 +1,4 @@
+import type { ParseResult } from 'tldts';
 
 export type Availability =
   | 'available'
@@ -52,11 +53,13 @@ export interface DomainStatus {
   error?: Error;
 }
 
+export type ParsedDomain = ParseResult;
+
 export interface CheckerAdapter {
   /** Unique identifier used to store results for this adapter */
   namespace: string;
   check(
-    domain: string,
+    domainObj: ParsedDomain,
     opts?: { timeoutMs?: number; tldConfig?: TldConfigEntry }
   ): Promise<AdapterResponse>;
 }
