@@ -15,7 +15,7 @@ A domain is **available** if (and only if) there's no whois/rdap record for it *
 
 To achieve both speed and accuracy under varying environments (Node.js vs browser), the library:
 
-1. **Tier&nbsp;1 – DNS**: probe via `host` and/or DNS-over-HTTPS (DOH) in parallel.
+1. **Tier&nbsp;1 – DNS**: probe via `host`/`ping` and/or DNS-over-HTTPS (DOH) in parallel.
 2. **Tier&nbsp;2 – RDAP**, when available.
 3. **Tier&nbsp;3 – WHOIS**: local WHOIS library or a paid WHOIS API.
 

@@ -6,6 +6,7 @@ import {
 } from './types';
 export type { DomainStatus } from './types';
 import { HostAdapter } from './adapters/hostAdapter';
+import { PingAdapter } from './adapters/pingAdapter';
 import { DohAdapter } from './adapters/dohAdapter';
 import { RdapAdapter } from './adapters/rdapAdapter';
 import { WhoisCliAdapter } from './adapters/whoisCliAdapter';
@@ -16,6 +17,7 @@ import { getTldAdapter } from './tldAdapters';
 
 const MAX_CONCURRENCY = 10;
 const host = new HostAdapter();
+const ping = new PingAdapter();
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
 const whoisCli = new WhoisCliAdapter();
@@ -74,7 +76,10 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
     let finalError: Error | undefined;
 
     let dnsResult: AdapterResponse | null = null;
-    const dnsAdapter = tldAdapter?.dns ?? (isNode ? host : doh);
+    const usePing =
+      opts.only?.some((p) => p.startsWith('dns.ping')) ||
+      opts.skip?.some((p) => p.startsWith('dns.host'));
+    const dnsAdapter = tldAdapter?.dns ?? (isNode ? (usePing ? ping : host) : doh);
     if (adapterAllowed(dnsAdapter.namespace, opts)) {
       try {
         dnsResult = await dnsAdapter.check(parsed);

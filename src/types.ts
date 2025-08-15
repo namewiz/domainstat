@@ -10,6 +10,7 @@ export type Availability =
 export type AdapterSource =
   | 'validator'
   | 'dns.host'
+  | 'dns.ping'
   | 'dns.doh'
   | 'rdap'
   | 'whois.lib'
