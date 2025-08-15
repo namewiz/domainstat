@@ -32,11 +32,12 @@ To achieve both speed and accuracy under varying environments (Node.js vs browse
 ## Public API
 
 ```ts
-import { check, checkBatch } from './index';
+import { check, checkBatch, checkBatchStream } from './index';
 
 export {
   check,
   checkBatch,
+  checkBatchStream,
 };
 ```
 
@@ -60,6 +61,7 @@ interface CheckOptions {
 
 check(domain: string, options?: CheckOptions);
 checkBatch(domains: string[], options?: CheckOptions);
+checkBatchStream(domains: string[], options?: CheckOptions): AsyncGenerator<DomainStatus>;
 ```
 
 Logging is disabled by default; pass `verbose: true` to enable log output.
@@ -86,7 +88,6 @@ Node or browser-specific adapters.
 * Implement rdap overrides for TLDs that are not rdap conformant like .ng
   * .ng registry https://whois.nic.net.ng/domains?name=jiji.ng&exactMatch=true
 * Fix whois fallback, perhaps using whois-json library.
-* Add streaming API for batch calls
 
 ## Running the Demo
 

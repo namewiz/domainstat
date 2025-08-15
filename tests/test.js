@@ -1,4 +1,4 @@
-import { checkBatch } from '../dist/index.js';
+import { checkBatch, checkBatchStream } from '../dist/index.js';
 import tlds from '../src/tlds.json' with { type: 'json' };
 import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
 
@@ -26,8 +26,25 @@ async function runTests() {
 
   const names = allDomains.map((d) => d.name);
   const uniqueNames = Array.from(new Set(names));
-  const batchResults = await checkBatch(uniqueNames);
-  const resultsMap = Object.fromEntries(uniqueNames.map((n, i) => [n, batchResults[i]]));
+  const streamedResults = [];
+  for await (const res of checkBatchStream(uniqueNames)) {
+    streamedResults.push(res);
+  }
+  const resultsMap = Object.fromEntries(streamedResults.map((r) => [r.domain, r]));
+
+  // verify that checkBatch collects from streaming API for a subset
+  const subset = uniqueNames.slice(0, Math.min(5, uniqueNames.length));
+  const subsetStreamed = [];
+  for await (const res of checkBatchStream(subset)) {
+    subsetStreamed.push(res);
+  }
+  const batchResults = await checkBatch(subset);
+  subsetStreamed.forEach((res, i) => {
+    const batched = batchResults[i];
+    if (res.domain !== batched.domain || res.availability !== batched.availability) {
+      throw new Error(`checkBatch mismatch for ${subset[i]}`);
+    }
+  });
 
   let passed = 0;
   const failed = [];
