@@ -6,26 +6,26 @@ const tldMap: Record<string, string | boolean> = {
   ...(tlds as any).ccTLDs,
   ...(tlds as any).SLDs,
 };
-import { DomainStatus } from "./types.js";
-import { parse } from "tldts";
+import { DomainStatus, ParsedDomain } from "./types.js";
 
-export function validateDomain(domain: string): DomainStatus {
-  const parsed = parse(domain.toLowerCase());
+export function validateDomain(parsed: ParsedDomain): DomainStatus {
   if (
     !parsed.domain ||
     !parsed.publicSuffix ||
-    domain.trim() !== parsed.domain
+    parsed.hostname !== parsed.domain
   ) {
     return {
-      domain,
+      domain: parsed.hostname || "",
       availability: "invalid",
       resolver: "validator",
       raw: { validator: null },
       error: new Error(
-        `Parse error: input: ${domain}, parsedName: ${parsed.domain}, tld: ${parsed.publicSuffix}`
+        `Parse error: input: ${parsed.hostname}, parsedName: ${parsed.domain}, tld: ${parsed.publicSuffix}`
       ),
     };
   }
+
+  const domain = parsed.domain;
 
   if (!parsed.isIcann) {
     return {

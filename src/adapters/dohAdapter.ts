@@ -1,4 +1,4 @@
-import { CheckerAdapter, AdapterResponse } from '../types';
+import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
 
 const DEFAULT_TIMEOUT_MS = 200;
 
@@ -9,7 +9,8 @@ export class DohAdapter implements CheckerAdapter {
     this.url = url;
   }
 
-  async check(domain: string, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+  async check(domainObj: ParsedDomain, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+    const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), timeoutMs);

@@ -1,4 +1,4 @@
-import { CheckerAdapter, AdapterResponse } from '../types';
+import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -8,7 +8,8 @@ const execAsync = promisify(exec);
 
 export class WhoisCliAdapter implements CheckerAdapter {
   namespace = 'whois.lib';
-  async check(domain: string, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+  async check(domainObj: ParsedDomain, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+    const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {
       const cmd = `whois ${domain}`;

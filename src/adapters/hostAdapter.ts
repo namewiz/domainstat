@@ -1,11 +1,12 @@
-import { CheckerAdapter, AdapterResponse } from '../types';
+import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
 import { promises as dns } from 'dns';
 
 const DEFAULT_TIMEOUT_MS = 300;
 
 export class HostAdapter implements CheckerAdapter {
   namespace = 'dns.host';
-  async check(domain: string, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+  async check(domainObj: ParsedDomain, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+    const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const timer = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('timeout')), timeoutMs)

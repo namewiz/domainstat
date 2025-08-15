@@ -1,4 +1,4 @@
-import { CheckerAdapter, AdapterResponse, TldConfigEntry } from '../types';
+import { CheckerAdapter, AdapterResponse, TldConfigEntry, ParsedDomain } from '../types';
 
 const DEFAULT_TIMEOUT_MS = 600;
 
@@ -10,9 +10,10 @@ export class RdapAdapter implements CheckerAdapter {
   }
 
   async check(
-    domain: string,
+    domainObj: ParsedDomain,
     opts: { timeoutMs?: number; tldConfig?: TldConfigEntry } = {}
   ): Promise<AdapterResponse> {
+    const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const baseUrl = opts.tldConfig?.rdapServer || this.baseUrl;
     const ac = new AbortController();

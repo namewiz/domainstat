@@ -1,4 +1,4 @@
-import { CheckerAdapter, AdapterResponse } from '../types';
+import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
 
 const DEFAULT_TIMEOUT_MS = 1000;
 
@@ -39,7 +39,8 @@ export class WhoisApiAdapter implements CheckerAdapter {
     return JSON.parse(text);
   }
 
-  async check(domain: string, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+  async check(domainObj: ParsedDomain, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+    const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {
       let data: any;

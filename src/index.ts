@@ -11,6 +11,7 @@ import { RdapAdapter } from './adapters/rdapAdapter';
 import { WhoisCliAdapter } from './adapters/whoisCliAdapter';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
 import { validateDomain } from './validator';
+import { parse } from 'tldts';
 
 const MAX_CONCURRENCY = 10;
 const host = new HostAdapter();
@@ -53,12 +54,19 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
   const raw: Record<string, any> = {};
   const platform = opts.platform ?? Platform.AUTO;
   const isNode = platform === Platform.AUTO ? detectNode() : platform === Platform.NODE;
-  const validated = validateDomain(domain);
+  const parsed = parse(domain.trim().toLowerCase());
+  const validated = validateDomain(parsed);
   if (validated.error) {
-    logger.error("validation error: ", validated.error.message)
-    logger.info('domain.check.end', { domain, status: validated.availability, resolver: 'validator', error: validated.error.message });
+    logger.error('validation error: ', validated.error.message);
+    logger.info('domain.check.end', {
+      domain: validated.domain,
+      status: validated.availability,
+      resolver: 'validator',
+      error: validated.error.message,
+    });
     return validated;
   }
+  const name = parsed.domain!;
 
   try {
     let finalError: Error | undefined;
@@ -67,10 +75,10 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
     const dnsAdapter = isNode ? host : doh;
     if (adapterAllowed(dnsAdapter.namespace, opts)) {
       try {
-        dnsResult = await dnsAdapter.check(domain);
+        dnsResult = await dnsAdapter.check(parsed);
       } catch (err: any) {
         dnsResult = {
-          domain,
+          domain: name,
           availability: 'unknown',
           source: dnsAdapter.namespace as any,
           raw: null,
@@ -79,38 +87,38 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
       }
       raw[dnsAdapter.namespace] = dnsResult.raw;
       if (dnsResult.error) {
-        logger.warn('dns.failed', { domain, error: String(dnsResult.error) });
+        logger.warn('dns.failed', { domain: name, error: String(dnsResult.error) });
         finalError = dnsResult.error;
       }
     }
 
     if (dnsResult && !dnsResult.error && dnsResult.availability === 'unavailable') {
       const result: DomainStatus = {
-        domain,
+        domain: name,
         availability: dnsResult.availability,
         resolver: dnsResult.source,
         raw,
         error: undefined,
       };
-      logger.info('domain.check.end', { domain, status: result.availability, resolver: result.resolver });
+      logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
       return result;
     }
 
     if (!opts.tldConfig?.skipRdap && adapterAllowed(rdap.namespace, opts)) {
-      const rdapRes = await rdap.check(domain, { tldConfig: opts.tldConfig });
+      const rdapRes = await rdap.check(parsed, { tldConfig: opts.tldConfig });
       raw[rdap.namespace] = rdapRes.raw;
       if (rdapRes.error) {
-        logger.warn('rdap.failed', { domain, error: String(rdapRes.error) });
+        logger.warn('rdap.failed', { domain: name, error: String(rdapRes.error) });
         finalError = rdapRes.error;
       } else {
         const result: DomainStatus = {
-          domain,
+          domain: name,
           availability: rdapRes.availability,
           resolver: rdapRes.source,
           raw,
           error: undefined,
         };
-        logger.info('domain.check.end', { domain, status: result.availability, resolver: result.resolver });
+        logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
         return result;
       }
     }
@@ -118,32 +126,32 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
     let whoisRes: AdapterResponse | null = null;
     const whoisAdapter = isNode ? whoisCli : whoisApi;
     if (adapterAllowed(whoisAdapter.namespace, opts)) {
-      whoisRes = await whoisAdapter.check(domain);
+      whoisRes = await whoisAdapter.check(parsed);
       raw[whoisAdapter.namespace] = whoisRes.raw;
       if (whoisRes.error) {
-        logger.warn(isNode ? 'whois.lib.failed' : 'whois.api.failed', { domain, error: String(whoisRes.error) });
+        logger.warn(isNode ? 'whois.lib.failed' : 'whois.api.failed', { domain: name, error: String(whoisRes.error) });
         finalError = whoisRes.error;
       } else {
         const result: DomainStatus = {
-          domain,
+          domain: name,
           availability: whoisRes.availability,
           resolver: whoisRes.source,
           raw,
           error: undefined,
         };
-        logger.info('domain.check.end', { domain, status: result.availability, resolver: result.resolver });
+        logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
         return result;
       }
     }
 
     const result: DomainStatus = {
-      domain,
+      domain: name,
       availability: 'unknown',
       resolver: 'app',
       raw,
       error: finalError,
     };
-    logger.info('domain.check.end', { domain, status: result.availability, resolver: result.resolver });
+    logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
     return result;
   } finally {
     // nothing to cleanup
