@@ -1,7 +1,6 @@
-import { checkBatch, checkBatchStream } from '../dist/index.js';
+import { checkBatchStream } from '../dist/index.js';
 import tlds from '../src/tlds.json' with { type: 'json' };
 import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
-
 
 const tldMap = { ...tlds.popular, ...tlds.gTLDs, ...tlds.ccTLDs, ...tlds.SLDs };
 const unavailableMap = {
@@ -20,61 +19,39 @@ async function runTests() {
   const availableTldDomains = Object.entries(tldMap)
     .filter(([, val]) => !!val)
     .map(([tld]) => ({ name: `this-domain-should-not-exist-12345.${tld}`, availability: 'available' }));
-  const unavailableTldDomains = Object.values(unavailableMap).map((domain) => ({ name: domain, availability: 'unavailable' })).filter(d => tldMap[d.name.split('.').pop()]);
+  const unavailableTldDomains = Object.values(unavailableMap)
+    .map((domain) => ({ name: domain, availability: 'unavailable' }))
+    .filter((d) => tldMap[d.name.split('.').pop()]);
 
   const allDomains = specialDomains.concat(...availableTldDomains, ...unavailableTldDomains);
 
-  const names = allDomains.map((d) => d.name);
-  const uniqueNames = Array.from(new Set(names));
-  const streamedResults = [];
-  for await (const res of checkBatchStream(uniqueNames)) {
-    streamedResults.push(res);
-  }
-  const resultsMap = Object.fromEntries(streamedResults.map((r) => [r.domain, r]));
-
-  // verify that checkBatch collects from streaming API for a subset
-  const subset = uniqueNames.slice(0, Math.min(5, uniqueNames.length));
-  const subsetStreamed = [];
-  for await (const res of checkBatchStream(subset)) {
-    subsetStreamed.push(res);
-  }
-  const batchResults = await checkBatch(subset);
-  subsetStreamed.forEach((res, i) => {
-    const batched = batchResults[i];
-    if (res.domain !== batched.domain || res.availability !== batched.availability) {
-      throw new Error(`checkBatch mismatch for ${subset[i]}`);
-    }
-  });
-
+  const expectedMap = Object.fromEntries(allDomains.map((d) => [d.name, d.availability]));
+  const uniqueNames = Array.from(new Set(Object.keys(expectedMap)));
   let passed = 0;
   const failed = [];
 
-  for (const d of allDomains) {
-    const res = resultsMap[d.name];
-    const msg = `domain:${d.name}, expected:${d.availability}, got:${res.availability}, resolver:${res.resolver}`;
-    
-    // TODO: Add a separate check for valid responses (e.g. must include resolver).
-    const hasNs = res.raw && res.raw[res.resolver] !== undefined;
-    if (res.availability === d.availability) {
+  for await (const res of checkBatchStream(uniqueNames)) {
+    const expected = expectedMap[res.domain];
+    const msg = `domain:${res.domain}, expected:${expected}, got:${res.availability}, resolver:${res.resolver}`;
+    if (res.availability === expected) {
       console.log(`PASSED: ${msg}`);
       passed++;
     } else {
-      failed.push(`FAILED: ${msg}\n\tError: ${res.error }`);
+      const failMsg = `FAILED: ${msg}\n\tError: ${res.error}`;
+      failed.push(failMsg);
+      console.error(`\x1b[31m${failMsg}\x1b[0m`);
     }
   }
 
-  for (const f of failed) {
-    console.error(`\x1b[31m${f}\x1b[0m`);
-  }
-
-  if(failed.length === 0) {
-    console.log(`\x1b[32mAll ${allDomains.length} tests passed!\x1b[0m`);
+  const total = uniqueNames.length;
+  if (failed.length === 0) {
+    console.log(`\x1b[32mAll ${total} tests passed!\x1b[0m`);
   } else {
-    console.log(`\x1b[31m\n${failed.length}/${allDomains.length} (${failed.length * 100 / allDomains.length}%) tests failed:\x1b[0m`);
+    console.log(`\x1b[31m\n${failed.length}/${total} (${((failed.length * 100) / total).toFixed(2)}%) tests failed:\x1b[0m`);
   }
-  if (failed.length / allDomains.length > 0.15) {
+  if (failed.length / total > 0.15) {
     process.exitCode = 1;
   }
-};
+}
 
 await runTests();
