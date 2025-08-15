@@ -6,7 +6,8 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=node --external:whois",
-    "test": "npm run build && node ./tests/test.js",
+    "test": "npm run build && ava",
+    "oldtest": "npm run build && node tests/test.js",
     "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo"
   },
   "repository": {
@@ -27,6 +28,11 @@
     "whois": "^2.15.0"
   },
   "devDependencies": {
-    "@types/node": "^24.1.0"
+    "@types/node": "^24.1.0",
+    "ava": "^6.4.1"
+  },
+  "ava": {
+    "files": ["tests/**/*.test.js"],
+    "timeout": "1m"
   }
 }

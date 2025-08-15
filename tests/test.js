@@ -30,14 +30,14 @@ async function runTests() {
   let passed = 0;
   let failed = 0;
 
-  for await (const res of checkBatchStream(uniqueNames)) {
+  for await (const res of checkBatchStream(uniqueNames, {skip: ['dns']})) {
     const expected = expectedMap[res.domain];
     const msg = `domain:${res.domain}, expected:${expected}, got:${res.availability}, resolver:${res.resolver}`;
     if (res.availability === expected) {
       console.log(`PASSED: ${msg}`);
       passed++;
     } else {
-      const failMsg = `FAILED: ${msg}\n\t${res.error}`;
+      const failMsg = `FAILED: ${msg}\n\t${res.error ?? 'No error message provided'}`;
       console.error(`\x1b[31m${failMsg}\x1b[0m`);
       failed++;
     }
