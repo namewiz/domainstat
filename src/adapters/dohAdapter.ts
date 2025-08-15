@@ -1,6 +1,6 @@
 import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
 
-const DEFAULT_TIMEOUT_MS = 200;
+const DEFAULT_TIMEOUT_MS = 1000;
 
 export class DohAdapter implements CheckerAdapter {
   namespace = 'dns.doh';

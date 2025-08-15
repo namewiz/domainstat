@@ -1,6 +1,6 @@
 import { CheckerAdapter, AdapterResponse, TldConfigEntry, ParsedDomain } from '../types';
 
-const DEFAULT_TIMEOUT_MS = 600;
+const DEFAULT_TIMEOUT_MS = 3000;
 
 export class RdapAdapter implements CheckerAdapter {
   namespace = 'rdap';
