@@ -9,7 +9,7 @@ import { HostAdapter } from './adapters/hostAdapter';
 import { PingAdapter } from './adapters/pingAdapter';
 import { DohAdapter } from './adapters/dohAdapter';
 import { RdapAdapter } from './adapters/rdapAdapter';
-import { WhoisCliAdapter } from './adapters/whoisCliAdapter';
+import { WhoisLibAdapter } from './adapters/whoisLibAdapter';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
 import { validateDomain } from './validator';
 import { parse } from 'tldts';
@@ -20,7 +20,7 @@ const host = new HostAdapter();
 const ping = new PingAdapter();
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
-const whoisCli = new WhoisCliAdapter();
+const whoisLib = new WhoisLibAdapter();
 const whoisApi = new WhoisApiAdapter(
   typeof process !== 'undefined' ? (process.env.WHOISFREAKS_API_KEY as string | undefined) : undefined,
   typeof process !== 'undefined' ? (process.env.WHOISXML_API_KEY as string | undefined) : undefined
@@ -132,7 +132,7 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
     }
 
     let whoisRes: AdapterResponse | null = null;
-    const whoisAdapter = tldAdapter?.whois ?? (isNode ? whoisCli : whoisApi);
+    const whoisAdapter = tldAdapter?.whois ?? (isNode ? whoisLib : whoisApi);
     if (adapterAllowed(whoisAdapter.namespace, opts)) {
       whoisRes = await whoisAdapter.check(parsed);
       raw[whoisAdapter.namespace] = whoisRes.raw;
