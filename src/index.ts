@@ -169,26 +169,48 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
   }
 }
 
-export async function checkBatch(domains: string[], opts: CheckOptions = {}): Promise<DomainStatus[]> {
-  const results: DomainStatus[] = [];
+export async function* checkBatchStream(
+  domains: string[],
+  opts: CheckOptions = {}
+): AsyncGenerator<DomainStatus> {
   const queue = [...domains];
-  const workers: Promise<void>[] = [];
+  const concurrency = opts.concurrency ?? MAX_CONCURRENCY;
+  const active: Array<{ id: number; promise: Promise<{ id: number; res: DomainStatus }> }> = [];
+  let idCounter = 0;
 
-  // Each worker pulls a domain from the queue and processes until the queue is empty.
-  const worker = async () => {
-    while (queue.length) {
-      const d = queue.shift();
-      if (!d) break;
-      const res = await check(d, opts);
-      results[domains.indexOf(d)] = res;
-    }
+  const enqueue = () => {
+    if (!queue.length) return;
+    const domain = queue.shift()!;
+    const id = idCounter++;
+    const promise = check(domain, opts).then((res) => ({ id, res: { ...res, domain } }));
+    active.push({ id, promise });
   };
 
-  const numWorkers = opts.concurrency ?? MAX_CONCURRENCY;
-  for (let i = 0; i < numWorkers; i++) {
-    workers.push(worker());
+  for (let i = 0; i < concurrency && queue.length; i++) {
+    enqueue();
   }
-  await Promise.all(workers);
+
+  while (active.length) {
+    const { id, res } = await Promise.race(active.map((a) => a.promise));
+    yield res;
+    const idx = active.findIndex((a) => a.id === id);
+    if (idx >= 0) {
+      active.splice(idx, 1);
+    }
+    enqueue();
+  }
+}
+
+export async function checkBatch(
+  domains: string[],
+  opts: CheckOptions = {},
+): Promise<DomainStatus[]> {
+  const results: DomainStatus[] = [];
+
+  for await (const res of checkBatchStream(domains, opts)) {
+    results.push(res);
+  }
+
   return results;
 }
 
