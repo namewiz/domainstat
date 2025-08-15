@@ -42,7 +42,7 @@ async function runTests() {
       console.log(`PASSED: ${msg}`);
       passed++;
     } else {
-      failed.push(`FAILED: ${msg}`);
+      failed.push(`FAILED: ${msg}\n\tError: ${res.error }`);
     }
   }
 

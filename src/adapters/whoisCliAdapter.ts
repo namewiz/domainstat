@@ -2,7 +2,7 @@ import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
-const DEFAULT_TIMEOUT_MS = 1000;
+const DEFAULT_TIMEOUT_MS = 5000;
 
 const execAsync = promisify(exec);
 
@@ -15,6 +15,15 @@ export class WhoisCliAdapter implements CheckerAdapter {
       const cmd = `whois ${domain}`;
       const { stdout } = await execAsync(cmd, { maxBuffer: 1024 * 1024, timeout: timeoutMs });
       const text = stdout.toLowerCase();
+      if (text.includes(`tld is not supported`)) {
+        return {
+          domain,
+          availability: 'unknown',
+          source: 'whois.lib',
+          raw: text,
+          error: new Error(`TLD '${domainObj.publicSuffix}' is not supported for whois`),
+        };
+      }
       const availablePatterns = [
         'no match',
         'not found',
