@@ -17,6 +17,8 @@ const unavailableMap = {
   ...unavailableDomainsJson.SLDs,
 };
 
+const testSummary = {};
+
 async function hasNetwork() {
   try {
     const controller = new AbortController();
@@ -54,6 +56,8 @@ test.serial('validator tests', async (t) => {
     { name: 'example.invalidtld', availability: 'unsupported' },
   ];
   const { pass, total } = await runTest(specialDomains);
+  console.log(`validator test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.validator = { pass, total };
   t.is(pass, total);
 });
 
@@ -74,7 +78,8 @@ test.serial('checkBatch tests', async (t) => {
   }));
   const domains = [...availableDomains, ...unavailableDomains];
   const { pass, total } = await runTest(domains);
-  console.log(`checkBatch test results: ${pass * 100 / total}%`);
+  console.log(`checkBatch test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.checkBatch = { pass, total };
   t.true(pass / total > 0.9);
 });
 
@@ -95,7 +100,8 @@ test.serial('dns.host tests', async (t) => {
   }));
   const domains = [...unknownDomains, ...unavailableDomains];
   const { pass, total } = await runTest(domains, { only: ['dns.host'] });
-  console.log(`dns.host test results: ${pass * 100 / total}%`);
+  console.log(`dns.host test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.dnsHost = { pass, total };
   t.true(pass / total > 0.95);
 });
 
@@ -116,8 +122,18 @@ test.serial('rdap tests', async (t) => {
   }));
   const domains = [...availableDomains, ...unavailableDomains];
   const { pass, total } = await runTest(domains, { only: ['rdap'] });
-  console.log(`rdap test results: ${pass * 100 / total}%`);
+  console.log(`rdap test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.rdap = { pass, total };
   t.true(pass / total > 0.80);
 });
 
+function printSummary() {
+  console.log('\nTest Summary:');
+  for (const [key, { pass, total }] of Object.entries(testSummary)) {
+    console.log(`- ${key}\t: ${pass}/${total}\t (${(pass / total * 100).toFixed(2)}%)`);
+  }
+}
+test.after.always(() => {
+  printSummary();
+});
 
