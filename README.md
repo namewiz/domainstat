@@ -1,108 +1,107 @@
-# Fast Domain Status Checker
+# Fast Domain Status
 
+Fast Domain Status is a lightweight TypeScript/JavaScript library for checking
+whether domain names are available for registration. It queries several data
+sources in a "first good win" order – DNS, RDAP and finally WHOIS – and returns a
+uniform result describing the domain's status.
 
-## Overview
+The package is suitable for both Node.js and browser environments and exposes
+batch utilities for high–volume lookups.
 
-A **Domain Status Checker** library provides a fast, reliable way to determine whether a given domain name is:
+## Features
 
-* **Available** for registration
-* **Unavailable** - already registered or not trivially purchasable
+- ⚡ **Fast**: probes DNS first and cancels slower checks once a definitive
+  answer is found.
+- 🔁 **Three tier lookup**: DNS → RDAP → WHOIS library/API.
+- 🌐 **Universal**: automatically detects Node or browser and selects the right
+  adapters. A `platform` option allows manual control.
+- ⚙️ **Customisable**: per‑TLD overrides, pluggable logging and adapter include/
+  exclude filters.
+- 📦 **Batch helpers**: check lists of domains with concurrency limits or stream
+  results as they arrive.
 
-Else returns **Error** for invalid syntax or unsupported TLD.
+## Installation
 
-A domain is **available** if (and only if) there's no whois/rdap record for it *AND* it can be automatically purchased without reservations.
-
-
-To achieve both speed and accuracy under varying environments (Node.js vs browser), the library:
-
-1. **Tier&nbsp;1 – DNS**: probe via `host`/`ping` and/or DNS-over-HTTPS (DOH) in parallel.
-2. **Tier&nbsp;2 – RDAP**, when available.
-3. **Tier&nbsp;3 – WHOIS**: local WHOIS library or a paid WHOIS API.
-
-## Requirements 
-
-* **Fast “first-good-win”** DNS probing (cancel slower probes once a record is found).
-* **Three-tier fallback**: DNS (host/DOH) → RDAP → WHOIS library/WHOIS API.
-* **Uniform result shape** for all sources.
-* **Per-TLD overrides**, e.g. custom RDAP servers or skipping RDAP entirely.
-* **Environment detection**: Node.js gets CLI & libraries; browser uses DOH & APIs.
-* **Batch mode**: concurrent checks with configurable concurrency limit.
-* **Extended statuses**: `expiring_soon`, `premium`, `reserved`, etc.
-
-## Public API
-
-```ts
-import { check, checkBatch, checkBatchStream } from './index';
-
-export {
-  check,
-  checkBatch,
-  checkBatchStream,
-};
+```bash
+npm install fast-domain-status
 ```
 
-### Configuration
+## Quick Start
 
-Both `check` and `checkBatch` accept an optional `options` object:
+```ts
+import { check, checkBatch, checkBatchStream } from 'fast-domain-status';
+
+const res = await check('example.com');
+// { domain: 'example.com', availability: 'unavailable', resolver: 'dns.host', raw: {...} }
+
+const batch = await checkBatch(['example.com', 'openai.org']);
+
+for await (const item of checkBatchStream(['foo.dev', 'bar.io'])) {
+  console.log(item.domain, item.availability);
+}
+```
+
+The `availability` field can be `available`, `unavailable`, `unsupported`,
+`invalid` or `unknown`. The `resolver` indicates which adapter produced the
+result and `raw` contains the raw responses from each adapter.
+
+## API
+
+### `check(domain, options?)`
+Checks a single domain and resolves to a `DomainStatus` object.
+
+### `checkBatch(domains, options?)`
+Checks multiple domains concurrently and resolves to an array of
+`DomainStatus` objects.
+
+### `checkBatchStream(domains, options?)`
+Returns an async generator yielding `DomainStatus` for each domain as soon as it
+finishes.
+
+### Options
 
 ```ts
 interface CheckOptions {
-  logger?: Logger;
+  logger?: Pick<Console, 'info' | 'warn' | 'error'>;
   verbose?: boolean;
-  concurrency?: number; // only used by checkBatch
-  /** Only run adapters whose namespace starts with one of these prefixes */
-  only?: string[];
-  /** Skip adapters whose namespace starts with one of these prefixes */
-  skip?: string[];
+  concurrency?: number; // used by batch helpers
+  only?: string[];       // run adapters whose namespace starts with these
+  skip?: string[];       // skip adapters whose namespace starts with these
   tldConfig?: TldConfigEntry;
-  /** Select platform. Defaults to 'auto' */
   platform?: 'auto' | 'node' | 'browser';
 }
-
-check(domain: string, options?: CheckOptions);
-checkBatch(domains: string[], options?: CheckOptions);
-checkBatchStream(domains: string[], options?: CheckOptions): AsyncGenerator<DomainStatus>;
 ```
 
-Logging is disabled by default; pass `verbose: true` to enable log output.
-The `platform` option lets you override automatic environment detection and force
-Node or browser-specific adapters.
+Logging is disabled unless `verbose` is set. When `platform` is `auto` the
+library detects the runtime and chooses suitable adapters.
 
-### Error Handling & Retries
+### WHOIS API Keys
 
-* **Timeouts** on all network calls (configurable, e.g. 3 s for DNS, 5 s for RDAP).
-* **Retries**: simple exponential backoff for RDAP and WHOIS API (max 2 retries).
-* **Per-adapter timeouts** via an optional `timeoutMs` parameter.
-* **Graceful degradation**: if RDAP fails or is skipped, still attempt WHOIS library & API.
+When running in the browser or when a WHOIS lookup is required, the library can
+use paid APIs. Provide credentials through the following environment variables:
 
----
+- `WHOISFREAKS_API_KEY`
+- `WHOISXML_API_KEY`
 
+## Demo
 
-## Pending TODOs
+A small demo application lives in the `demo/` directory.
 
-* Add UI demo at demo/index.html which uses the bundled js in dist/index.js
-  * Make this demo the Github page
-  * This demo should test the domains like for available and unavailable tlds.
-  * Add an npm command to bring up the demo.
+```bash
+npm run build
+npm run demo
+```
 
-* Implement rdap overrides for TLDs that are not rdap conformant like .ng
-  * .ng registry https://whois.nic.net.ng/domains?name=jiji.ng&exactMatch=true
-* Fix whois fallback, perhaps using whois-json library.
+Open the printed URL in your browser to test domain lookups via the bundled
+library.
 
-## Running the Demo
+## Testing
 
-1. Build the library:
+```bash
+npm test
+```
 
-   ```bash
-   npm run build
-   ```
+## License
 
-2. Start the demo server:
+ISC
 
-   ```bash
-   npm run demo
-   ```
-
-   This uses `npx serve` to host the `demo/` folder. Open the printed URL in your browser to try the UI.
-   The page includes a collapsible panel to choose which TLDs to check and
-   shows a results table for each query.
