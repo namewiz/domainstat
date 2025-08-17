@@ -58,9 +58,9 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
   const platform = opts.platform ?? Platform.AUTO;
   const isNode = platform === Platform.AUTO ? detectNode() : platform === Platform.NODE;
   const parsed = parse(domain.trim().toLowerCase());
-  const validated = validateDomain(parsed);
+  const validated = validateDomain(parsed, domain);
   if (validated.error) {
-    logger.error('validation error: ', validated.error.message);
+    logger.error(`validation error for domain '${domain}', error: ${validated.error.message}`);
     logger.info('domain.check.end', {
       domain: validated.domain,
       status: validated.availability,

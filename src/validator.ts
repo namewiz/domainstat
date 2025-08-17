@@ -8,7 +8,7 @@ const tldMap: Record<string, string | boolean> = {
 };
 import { DomainStatus, ParsedDomain } from "./types.js";
 
-export function validateDomain(parsed: ParsedDomain): DomainStatus {
+export function validateDomain(parsed: ParsedDomain, originalDomain: string): DomainStatus {
   if (
     !parsed.domain ||
     !parsed.publicSuffix ||
@@ -20,7 +20,7 @@ export function validateDomain(parsed: ParsedDomain): DomainStatus {
       resolver: "validator",
       raw: { validator: null },
       error: new Error(
-        `Parse error: input: ${parsed.hostname}, parsedName: ${parsed.domain}, tld: ${parsed.publicSuffix}`
+        `Parse error: originalDomain: ${originalDomain}, parsedName: ${parsed.domain}, tld: ${parsed.publicSuffix}`
       ),
     };
   }

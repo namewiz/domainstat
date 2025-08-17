@@ -3,8 +3,11 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
-const DEFAULT_TIMEOUT_MS = 300;
+const DEFAULT_TIMEOUT_MS = 1000;
 
+// Do not use this adapter except for liveness checks.
+// Host is superior in speed, reliability and coverage.
+// The nodejs implementation is not better either https://www.npmjs.com/package/net-ping.
 export class PingAdapter implements CheckerAdapter {
   namespace = 'dns.ping';
 

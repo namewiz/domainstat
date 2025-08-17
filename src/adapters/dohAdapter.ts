@@ -6,6 +6,8 @@ export class DohAdapter implements CheckerAdapter {
   namespace = 'dns.doh';
   private url: string;
   constructor(url = 'https://cloudflare-dns.com/dns-query') {
+    // TODO: Add google cloud dns as fallback - https://dns.google/resolve
+    // Maybe use cloudflare for some A-K, and google for the rest?
     this.url = url;
   }
 
