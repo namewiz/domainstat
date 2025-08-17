@@ -2,6 +2,7 @@ import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
 
 const DEFAULT_TIMEOUT_MS = 1000;
 
+// If this host device has a WIFI DNS override, it would intefer with this adapter.
 export class DohAdapter implements CheckerAdapter {
   namespace = 'dns.doh';
   private url: string;

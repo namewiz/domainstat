@@ -17,6 +17,21 @@ const unavailableMap = {
   ...unavailableDomainsJson.SLDs,
 };
 
+const unavailableDomains = tldList.filter(tld => unavailableMap[tld]).map((tld) => ({
+  name: unavailableMap[tld],
+  availability: 'unavailable',
+}));
+
+const availableDomains = tldList.map((tld) => ({
+  name: `this-domain-should-not-exist-12345.${tld}`,
+  availability: 'available',
+}));
+
+const unknownDomains = tldList.map((tld) => ({
+  name: `this-domain-should-not-exist-12345.${tld}`,
+  availability: 'unknown',
+}));
+
 const testSummary = {};
 
 async function hasNetwork() {
@@ -68,12 +83,7 @@ test.serial('dns.host unknown status tests', async (t) => {
     return;
   }
 
-  const domains = tldList.map((tld) => ({
-    name: `this-domain-should-not-exist-12345.${tld}`,
-    availability: 'unknown',
-  })).sort(() => Math.random() - 0.5).slice(0, 10);
-
-  const { pass, total } = await runTest(domains, { only: ['dns.host'] });
+  const { pass, total } = await runTest(unknownDomains, { only: ['dns.host'] });
   console.log(`dns.host unknown status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.dnsHostUnknown = { pass, total, cutoff: 1 };
   t.true(pass / total >= 1);
@@ -86,12 +96,7 @@ test.serial('dns.host unavailable status tests', async (t) => {
     return;
   }
 
-  const domains = tldList.filter(tld => unavailableMap[tld]).map((tld) => ({
-    name: unavailableMap[tld],
-    availability: 'unavailable',
-  }));
-
-  const { pass, total } = await runTest(domains, { only: ['dns.host'] });
+  const { pass, total } = await runTest(unavailableDomains, { only: ['dns.host'] });
   console.log(`dns.host unavailable domains test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.dnsHostUnavailable = { pass, total, cutoff: 0.99 };
   t.true(pass / total >= 0.99);
@@ -104,56 +109,49 @@ test.serial('dns.doh unknown status tests', async (t) => {
     return;
   }
 
-  // randomly pick 10 unknown domains.
-  const domains = tldList.map((tld) => ({
-    name: `this-domain-should-not-exist-12345.${tld}`,
-    availability: 'unknown',
-  })).sort(() => Math.random() - 0.5).slice(0, 10);
-
-  const { pass, total } = await runTest(domains, { only: ['dns.doh'] });
+  const { pass, total } = await runTest(unknownDomains, { only: ['dns.doh'], platform: 'browser' });
   console.log(`dns.doh unknown status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.dnsDohUnknown = { pass, total, cutoff: 1 };
   t.true(pass / total >= 1);
 });
 
-test.serial('dns.doh unavailable status tests (skipped)', async (t) => {
+test.serial('dns.doh unavailable status tests', async (t) => {
   if (!(await hasNetwork())) {
     t.log('Skipping dns.doh tests due to lack of network access');
     t.pass();
     return;
   }
 
-  const domains = tldList.filter(tld => unavailableMap[tld]).map((tld) => ({
-    name: unavailableMap[tld],
-    availability: 'unavailable',
-  }));
-
-  const { pass, total } = await runTest(domains, { only: ['dns.doh'] });
+  const { pass, total } = await runTest(unavailableDomains, { only: ['dns.doh'], platform: 'browser' });
   console.log(`dns.doh unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
-  testSummary.dnsDohUnavailable = { pass, total, cutoff: 0.80 };
-  t.true(pass / total >= 0.80);
+  testSummary.dnsDohUnavailable = { pass, total, cutoff: 0.98 };
+  t.true(pass / total >= 0.98);
 });
 
-test.serial('dns.ping tests', async (t) => {
+test.serial('dns.ping unknown status tests', async (t) => {
   if (!(await hasNetwork())) {
     t.log('Skipping dns.ping tests due to lack of network access');
     t.pass();
     return;
   }
-
-  const unknownDomains = tldList.map((tld) => ({
-    name: `this-domain-should-not-exist-12345.${tld}`,
-    availability: 'unknown',
-  })).slice(0, 10);
-  const unavailableDomains = tldList.filter(tld => unavailableMap[tld]).map((tld) => ({
-    name: unavailableMap[tld],
-    availability: 'unavailable',
-  }));
-  const domains = [...unknownDomains, ...unavailableDomains];
-  const { pass, total } = await runTest(domains, { only: ['dns.ping'] });
+  
+  const { pass, total } = await runTest(unknownDomains, { only: ['dns.ping'] });
   console.log(`dns.ping test results: ${(pass * 100 / total).toFixed(2)}%`);
-  testSummary.dnsPing = { pass, total, cutoff: 0.9 };
-  t.true(pass / total >= 0.9);
+  testSummary.dnsPingUnknown = { pass, total, cutoff: 1 };
+  t.true(pass / total >= 1);
+});
+
+test.serial('dns.ping unavailable status tests', async (t) => {
+  if (!(await hasNetwork())) {
+    t.log('Skipping dns.ping tests due to lack of network access');
+    t.pass();
+    return;
+  }
+  
+  const { pass, total } = await runTest(unavailableDomains, { only: ['dns.ping'] });
+  console.log(`dns.ping test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.dnsPingUnavailable = { pass, total, cutoff: 0.7 };
+  t.true(pass / total >= 0.7);
 });
 
 test.serial('rdap tests', async (t) => {
@@ -162,15 +160,7 @@ test.serial('rdap tests', async (t) => {
     t.pass();
     return;
   }
-
-  const availableDomains = tldList.map((tld) => ({
-    name: `this-domain-should-not-exist-12345.${tld}`,
-    availability: 'available',
-  }));
-  const unavailableDomains = tldList.filter(tld => unavailableMap[tld]).map((tld) => ({
-    name: unavailableMap[tld],
-    availability: 'unavailable',
-  }));
+  
   const domains = [...availableDomains, ...unavailableDomains];
   const { pass, total } = await runTest(domains, { only: ['rdap'] });
   console.log(`rdap test results: ${(pass * 100 / total).toFixed(2)}%`);
@@ -208,15 +198,7 @@ test.serial('browser platform tests', async (t) => {
     t.pass();
     return;
   }
-
-  const availableDomains = tldList.map((tld) => ({
-    name: `this-domain-should-not-exist-12345.${tld}`,
-    availability: 'available',
-  }));
-  const unavailableDomains = tldList.filter(tld => unavailableMap[tld]).map((tld) => ({
-    name: unavailableMap[tld],
-    availability: 'unavailable',
-  }));
+  
   const domains = [...availableDomains, ...unavailableDomains];
   const { pass, total } = await runTest(domains, { platform: 'browser' });
   console.log(`browser platform test results: ${(pass * 100 / total).toFixed(2)}%`);
