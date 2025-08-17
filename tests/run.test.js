@@ -154,17 +154,81 @@ test.serial('dns.ping unavailable status tests', async (t) => {
   t.true(pass / total >= 0.7);
 });
 
-test.serial('rdap tests', async (t) => {
+test.serial('whois.lib available status tests', async (t) => {
+  if (!(await hasNetwork())) {
+    t.log('Skipping whois.lib tests due to lack of network access');
+    t.pass();
+    return;
+  }
+
+  const { pass, total } = await runTest(availableDomains, { only: ['whois.lib'] });
+  console.log(`whois.lib available status test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.whoisLibAvailable = { pass, total, cutoff: 0.80 };
+  t.true(pass / total >= 0.80);
+});
+
+test.serial('whois.lib unavailable status tests', async (t) => {
+  if (!(await hasNetwork())) {
+    t.log('Skipping whois.lib tests due to lack of network access');
+    t.pass();
+    return;
+  }
+
+  const { pass, total } = await runTest(unavailableDomains, { only: ['whois.lib'] });
+  console.log(`whois.lib unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.whoisLibUnavailable = { pass, total, cutoff: 0.80 };
+  t.true(pass / total >= 0.80);
+});
+
+test.serial.skip('whois.api available status tests', async (t) => {
+  if (!(await hasNetwork())) {
+    t.log('Skipping whois.api tests due to lack of network access');
+    t.pass();
+    return;
+  }
+
+  const { pass, total } = await runTest(availableDomains, { only: ['whois.api'] });
+  console.log(`whois.api available status test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.whoisApiAvailable = { pass, total, cutoff: 0.80 };
+  t.true(pass / total >= 0.80);
+});
+
+test.serial.skip('whois.api unavailable status tests', async (t) => {
+  if (!(await hasNetwork())) {
+    t.log('Skipping whois.api tests due to lack of network access');
+    t.pass();
+    return;
+  }
+
+  const { pass, total } = await runTest(unavailableDomains, { only: ['whois.api'] });
+  console.log(`whois.api unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.whoisApiUnavailable = { pass, total, cutoff: 0.80 };
+  t.true(pass / total >= 0.80);
+});
+
+test.serial('rdap available status tests', async (t) => {
   if (!(await hasNetwork())) {
     t.log('Skipping rdap tests due to lack of network access');
     t.pass();
     return;
   }
-  
-  const domains = [...availableDomains, ...unavailableDomains];
-  const { pass, total } = await runTest(domains, { only: ['rdap'] });
-  console.log(`rdap test results: ${(pass * 100 / total).toFixed(2)}%`);
-  testSummary.rdap = { pass, total, cutoff: 0.80 };
+
+  const { pass, total } = await runTest(availableDomains, { only: ['rdap'] });
+  console.log(`rdap available status test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.rdapAvailable = { pass, total, cutoff: 0.80 };
+  t.true(pass / total >= 0.80);
+});
+
+test.serial('rdap unavailable status tests', async (t) => {
+  if (!(await hasNetwork())) {
+    t.log('Skipping rdap tests due to lack of network access');
+    t.pass();
+    return;
+  }
+
+  const { pass, total } = await runTest(unavailableDomains, { only: ['rdap'] });
+  console.log(`rdap unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.rdapUnavailable = { pass, total, cutoff: 0.80 };
   t.true(pass / total >= 0.80);
 });
 
