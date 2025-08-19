@@ -69,11 +69,13 @@ interface CheckOptions {
   skip?: string[];       // skip adapters whose namespace starts with these
   tldConfig?: TldConfigEntry;
   platform?: 'auto' | 'node' | 'browser';
+  cache?: boolean;      // enable or disable caching (default true)
 }
 ```
 
 Logging is disabled unless `verbose` is set. When `platform` is `auto` the
-library detects the runtime and chooses suitable adapters.
+library detects the runtime and chooses suitable adapters. Set `cache: false`
+to disable caching.
 
 ### WHOIS API Keys
 

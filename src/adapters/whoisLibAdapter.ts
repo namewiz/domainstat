@@ -1,5 +1,6 @@
-import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
+import { AdapterResponse, ParsedDomain } from '../types';
 import whois from 'whois';
+import { BaseCheckerAdapter } from './baseAdapter';
 
 const DEFAULT_TIMEOUT_MS = 5000;
 
@@ -15,9 +16,14 @@ function lookup(domain: string, timeoutMs: number): Promise<string> {
   });
 }
 
-export class WhoisLibAdapter implements CheckerAdapter {
-  namespace = 'whois.lib';
-  async check(domainObj: ParsedDomain, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+export class WhoisLibAdapter extends BaseCheckerAdapter {
+  constructor() {
+    super('whois.lib');
+  }
+  protected async doCheck(
+    domainObj: ParsedDomain,
+    opts: { timeoutMs?: number } = {},
+  ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {

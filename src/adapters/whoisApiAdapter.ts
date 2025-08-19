@@ -1,12 +1,13 @@
-import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
+import { AdapterResponse, ParsedDomain } from '../types';
+import { BaseCheckerAdapter } from './baseAdapter';
 
 const DEFAULT_TIMEOUT_MS = 1000;
 
-export class WhoisApiAdapter implements CheckerAdapter {
-  namespace = 'whois.api';
+export class WhoisApiAdapter extends BaseCheckerAdapter {
   private freaksKey?: string;
   private xmlKey?: string;
   constructor(freaksKey?: string, xmlKey?: string) {
+    super('whois.api');
     this.freaksKey = freaksKey;
     this.xmlKey = xmlKey;
   }
@@ -39,7 +40,10 @@ export class WhoisApiAdapter implements CheckerAdapter {
     return JSON.parse(text);
   }
 
-  async check(domainObj: ParsedDomain, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+  protected async doCheck(
+    domainObj: ParsedDomain,
+    opts: { timeoutMs?: number } = {},
+  ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {

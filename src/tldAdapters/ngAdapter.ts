@@ -1,14 +1,14 @@
-import { CheckerAdapter, AdapterResponse, ParsedDomain, AdapterSource } from '../types';
+import { AdapterResponse, ParsedDomain, AdapterSource } from '../types';
+import { BaseCheckerAdapter } from '../adapters/baseAdapter';
 
 const DEFAULT_TIMEOUT_MS = 3000;
 
-export class NgAdapter implements CheckerAdapter {
-  namespace: string;
+export class NgAdapter extends BaseCheckerAdapter {
   private source: AdapterSource;
 
   constructor(source: AdapterSource, namespace: string) {
+    super(namespace);
     this.source = source;
-    this.namespace = namespace;
   }
 
   private async query(domain: string, timeoutMs: number): Promise<{ exists: boolean; raw: any }> {
@@ -30,7 +30,7 @@ export class NgAdapter implements CheckerAdapter {
     }
   }
 
-  async check(
+  protected async doCheck(
     domainObj: ParsedDomain,
     opts: { timeoutMs?: number } = {}
   ): Promise<AdapterResponse> {
