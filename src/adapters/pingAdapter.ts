@@ -1,6 +1,7 @@
-import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
+import { AdapterResponse, ParsedDomain } from '../types';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { BaseCheckerAdapter } from './baseAdapter';
 
 const execAsync = promisify(exec);
 const DEFAULT_TIMEOUT_MS = 1000;
@@ -8,10 +9,15 @@ const DEFAULT_TIMEOUT_MS = 1000;
 // Do not use this adapter except for liveness checks.
 // Host is superior in speed, reliability and coverage.
 // The nodejs implementation is not better either https://www.npmjs.com/package/net-ping.
-export class PingAdapter implements CheckerAdapter {
-  namespace = 'dns.ping';
+export class PingAdapter extends BaseCheckerAdapter {
+  constructor() {
+    super('dns.ping');
+  }
 
-  async check(domainObj: ParsedDomain, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+  protected async doCheck(
+    domainObj: ParsedDomain,
+    opts: { timeoutMs?: number } = {},
+  ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const cmd = `ping -c 1 ${domain}`;

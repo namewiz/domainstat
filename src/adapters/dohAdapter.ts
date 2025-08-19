@@ -1,18 +1,22 @@
-import { CheckerAdapter, AdapterResponse, ParsedDomain } from '../types';
+import { AdapterResponse, ParsedDomain } from '../types';
+import { BaseCheckerAdapter } from './baseAdapter';
 
 const DEFAULT_TIMEOUT_MS = 1000;
 
 // If this host device has a WIFI DNS override, it would intefer with this adapter.
-export class DohAdapter implements CheckerAdapter {
-  namespace = 'dns.doh';
+export class DohAdapter extends BaseCheckerAdapter {
   private url: string;
   constructor(url = 'https://cloudflare-dns.com/dns-query') {
+    super('dns.doh');
     // TODO: Add google cloud dns as fallback - https://dns.google/resolve
     // Maybe use cloudflare for some A-K, and google for the rest?
     this.url = url;
   }
 
-  async check(domainObj: ParsedDomain, opts: { timeoutMs?: number } = {}): Promise<AdapterResponse> {
+  protected async doCheck(
+    domainObj: ParsedDomain,
+    opts: { timeoutMs?: number } = {},
+  ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const ac = new AbortController();
@@ -49,8 +53,7 @@ export class DohAdapter implements CheckerAdapter {
         raw: null,
         error: err,
       };
-    }
-    finally {
+    } finally {
       clearTimeout(timer);
     }
   }

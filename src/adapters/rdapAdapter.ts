@@ -1,15 +1,16 @@
-import { CheckerAdapter, AdapterResponse, TldConfigEntry, ParsedDomain } from '../types';
+import { AdapterResponse, TldConfigEntry, ParsedDomain } from '../types';
+import { BaseCheckerAdapter } from './baseAdapter';
 
 const DEFAULT_TIMEOUT_MS = 3000;
 
-export class RdapAdapter implements CheckerAdapter {
-  namespace = 'rdap';
+export class RdapAdapter extends BaseCheckerAdapter {
   private baseUrl: string;
   constructor(baseUrl = 'https://rdap.org/domain/') {
+    super('rdap');
     this.baseUrl = baseUrl;
   }
 
-  async check(
+  protected async doCheck(
     domainObj: ParsedDomain,
     opts: { timeoutMs?: number; tldConfig?: TldConfigEntry } = {}
   ): Promise<AdapterResponse> {

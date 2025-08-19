@@ -1,0 +1,39 @@
+import { CheckerAdapter, AdapterResponse, ParsedDomain, TldConfigEntry } from '../types';
+
+type BaseOpts = { timeoutMs?: number; tldConfig?: TldConfigEntry; cache?: boolean };
+
+export abstract class BaseCheckerAdapter implements CheckerAdapter {
+  public readonly namespace: string;
+  private static cache = new Map<string, AdapterResponse>();
+
+  constructor(namespace: string) {
+    if (!namespace) {
+      throw new Error('BaseCheckerAdapter requires a namespace');
+    }
+    this.namespace = namespace;
+  }
+
+  async check(domainObj: ParsedDomain, opts: BaseOpts = {}): Promise<AdapterResponse> {
+    const domain = domainObj.domain as string;
+    const cacheEnabled = opts.cache !== false;
+    const key = `${this.namespace}:${domain}`;
+    if (cacheEnabled) {
+      const cached = BaseCheckerAdapter.cache.get(key);
+      if (cached) {
+        return cached;
+      }
+    }
+
+    const { cache, ...rest } = opts;
+    const res = await this.doCheck(domainObj, rest);
+    if (cacheEnabled && !res.error) {
+      BaseCheckerAdapter.cache.set(key, res);
+    }
+    return res;
+  }
+
+  protected abstract doCheck(
+    domainObj: ParsedDomain,
+    opts?: { timeoutMs?: number; tldConfig?: TldConfigEntry },
+  ): Promise<AdapterResponse>;
+}

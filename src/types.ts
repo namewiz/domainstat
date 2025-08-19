@@ -61,7 +61,7 @@ export interface CheckerAdapter {
   namespace: string;
   check(
     domainObj: ParsedDomain,
-    opts?: { timeoutMs?: number; tldConfig?: TldConfigEntry }
+    opts?: { timeoutMs?: number; tldConfig?: TldConfigEntry; cache?: boolean }
   ): Promise<AdapterResponse>;
 }
 
@@ -83,4 +83,8 @@ export interface CheckOptions {
    * Platform to run adapters on. Defaults to auto-detect based on environment.
    */
   platform?: Platform;
+  /**
+   * Enable or disable caching. Caching is enabled by default.
+   */
+  cache?: boolean;
 }

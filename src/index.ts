@@ -82,7 +82,7 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
     const dnsAdapter = tldAdapter?.dns ?? (isNode ? (usePing ? ping : host) : doh);
     if (adapterAllowed(dnsAdapter.namespace, opts)) {
       try {
-        dnsResult = await dnsAdapter.check(parsed);
+        dnsResult = await dnsAdapter.check(parsed, { cache: opts.cache });
       } catch (err: any) {
         dnsResult = {
           domain: name,
@@ -113,7 +113,10 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
 
     const rdapAdapter = tldAdapter?.rdap ?? rdap;
     if (!opts.tldConfig?.skipRdap && adapterAllowed(rdapAdapter.namespace, opts)) {
-      const rdapRes = await rdapAdapter.check(parsed, { tldConfig: opts.tldConfig });
+      const rdapRes = await rdapAdapter.check(parsed, {
+        tldConfig: opts.tldConfig,
+        cache: opts.cache,
+      });
       raw[rdapAdapter.namespace] = rdapRes.raw;
       if (rdapRes.error) {
         logger.warn('rdap.failed', { domain: name, error: String(rdapRes.error) });
@@ -134,7 +137,7 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
     let whoisRes: AdapterResponse | null = null;
     const whoisAdapter = tldAdapter?.whois ?? (isNode ? whoisLib : whoisApi);
     if (adapterAllowed(whoisAdapter.namespace, opts)) {
-      whoisRes = await whoisAdapter.check(parsed);
+      whoisRes = await whoisAdapter.check(parsed, { cache: opts.cache });
       raw[whoisAdapter.namespace] = whoisRes.raw;
       if (whoisRes.error) {
         logger.warn(
