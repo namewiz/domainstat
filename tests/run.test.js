@@ -181,7 +181,7 @@ test.serial('.ng TLD tests', async (t) => {
   t.true(pass / total == 1);
 });
 
-test.only('.ng TLD tests with rdap', async (t) => {
+test.serial('.ng TLD tests with rdap', async (t) => {
   const ngTlds = tldList.filter((tld) => tld === 'ng' || tld.endsWith('.ng'));
   const availableDomains = ngTlds.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
