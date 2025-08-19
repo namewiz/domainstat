@@ -13,6 +13,7 @@ export type AdapterSource =
   | 'dns.ping'
   | 'dns.doh'
   | 'rdap'
+  | 'rdap.ng'
   | 'whois.lib'
   | 'whois.api'
   | 'app';

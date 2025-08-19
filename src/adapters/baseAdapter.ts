@@ -1,12 +1,12 @@
-import { CheckerAdapter, AdapterResponse, ParsedDomain, TldConfigEntry } from '../types';
+import { CheckerAdapter, AdapterResponse, ParsedDomain, TldConfigEntry, AdapterSource } from '../types';
 
 type BaseOpts = { timeoutMs?: number; tldConfig?: TldConfigEntry; cache?: boolean };
 
 export abstract class BaseCheckerAdapter implements CheckerAdapter {
-  public readonly namespace: string;
+  public readonly namespace: AdapterSource;
   private static cache = new Map<string, AdapterResponse>();
 
-  constructor(namespace: string) {
+  constructor(namespace: AdapterSource) {
     if (!namespace) {
       throw new Error('BaseCheckerAdapter requires a namespace');
     }
