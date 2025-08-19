@@ -32,8 +32,6 @@ const unknownDomains = tldList.map((tld) => ({
   availability: 'unknown',
 }));
 
-const testSummary = {};
-
 async function hasNetwork() {
   try {
     const controller = new AbortController();
@@ -45,6 +43,12 @@ async function hasNetwork() {
     return false;
   }
 }
+if (!(await hasNetwork())) {
+  console.warn('No network access, several tests may fail');
+}
+
+
+const testSummary = {};
 
 async function runTest(domains, opts = {}) {
   const expectedMap = Object.fromEntries(domains.map((d) => [d.name, d.availability]));
@@ -77,12 +81,6 @@ test.serial('validator tests', async (t) => {
 });
 
 test.serial('dns.host unknown status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping checkBatch tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(unknownDomains, { only: ['dns.host'] });
   console.log(`dns.host unknown status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.dnsHostUnknown = { pass, total, cutoff: 1 };
@@ -90,12 +88,6 @@ test.serial('dns.host unknown status tests', async (t) => {
 });
 
 test.serial('dns.host unavailable status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping checkBatch tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(unavailableDomains, { only: ['dns.host'] });
   console.log(`dns.host unavailable domains test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.dnsHostUnavailable = { pass, total, cutoff: 0.99 };
@@ -103,12 +95,6 @@ test.serial('dns.host unavailable status tests', async (t) => {
 });
 
 test.serial('dns.doh unknown status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping dns.doh tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(unknownDomains, { only: ['dns.doh'], platform: 'browser' });
   console.log(`dns.doh unknown status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.dnsDohUnknown = { pass, total, cutoff: 1 };
@@ -116,12 +102,6 @@ test.serial('dns.doh unknown status tests', async (t) => {
 });
 
 test.serial('dns.doh unavailable status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping dns.doh tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(unavailableDomains, { only: ['dns.doh'], platform: 'browser' });
   console.log(`dns.doh unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.dnsDohUnavailable = { pass, total, cutoff: 0.98 };
@@ -129,12 +109,6 @@ test.serial('dns.doh unavailable status tests', async (t) => {
 });
 
 test.serial('dns.ping unknown status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping dns.ping tests due to lack of network access');
-    t.pass();
-    return;
-  }
-  
   const { pass, total } = await runTest(unknownDomains, { only: ['dns.ping'] });
   console.log(`dns.ping test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.dnsPingUnknown = { pass, total, cutoff: 1 };
@@ -142,12 +116,6 @@ test.serial('dns.ping unknown status tests', async (t) => {
 });
 
 test.serial('dns.ping unavailable status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping dns.ping tests due to lack of network access');
-    t.pass();
-    return;
-  }
-  
   const { pass, total } = await runTest(unavailableDomains, { only: ['dns.ping'] });
   console.log(`dns.ping test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.dnsPingUnavailable = { pass, total, cutoff: 0.7 };
@@ -155,12 +123,6 @@ test.serial('dns.ping unavailable status tests', async (t) => {
 });
 
 test.serial('whois.lib available status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping whois.lib tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(availableDomains, { only: ['whois.lib'] });
   console.log(`whois.lib available status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.whoisLibAvailable = { pass, total, cutoff: 0.80 };
@@ -168,12 +130,6 @@ test.serial('whois.lib available status tests', async (t) => {
 });
 
 test.serial('whois.lib unavailable status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping whois.lib tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(unavailableDomains, { only: ['whois.lib'] });
   console.log(`whois.lib unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.whoisLibUnavailable = { pass, total, cutoff: 0.80 };
@@ -181,12 +137,6 @@ test.serial('whois.lib unavailable status tests', async (t) => {
 });
 
 test.serial.skip('whois.api available status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping whois.api tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(availableDomains, { only: ['whois.api'] });
   console.log(`whois.api available status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.whoisApiAvailable = { pass, total, cutoff: 0.80 };
@@ -194,12 +144,6 @@ test.serial.skip('whois.api available status tests', async (t) => {
 });
 
 test.serial.skip('whois.api unavailable status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping whois.api tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(unavailableDomains, { only: ['whois.api'] });
   console.log(`whois.api unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.whoisApiUnavailable = { pass, total, cutoff: 0.80 };
@@ -207,12 +151,6 @@ test.serial.skip('whois.api unavailable status tests', async (t) => {
 });
 
 test.serial('rdap available status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping rdap tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(availableDomains, { only: ['rdap'] });
   console.log(`rdap available status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.rdapAvailable = { pass, total, cutoff: 0.80 };
@@ -220,12 +158,6 @@ test.serial('rdap available status tests', async (t) => {
 });
 
 test.serial('rdap unavailable status tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping rdap tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const { pass, total } = await runTest(unavailableDomains, { only: ['rdap'] });
   console.log(`rdap unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.rdapUnavailable = { pass, total, cutoff: 0.80 };
@@ -233,12 +165,6 @@ test.serial('rdap unavailable status tests', async (t) => {
 });
 
 test.serial('.ng TLD tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping .ng TLD tests due to lack of network access');
-    t.pass();
-    return;
-  }
-
   const ngTlds = tldList.filter((tld) => tld === 'ng' || tld.endsWith('.ng'));
   const availableDomains = ngTlds.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
@@ -257,12 +183,6 @@ test.serial('.ng TLD tests', async (t) => {
 
 
 test.serial('browser platform tests', async (t) => {
-  if (!(await hasNetwork())) {
-    t.log('Skipping browser platform tests due to lack of network access');
-    t.pass();
-    return;
-  }
-  
   const domains = [...availableDomains, ...unavailableDomains];
   const { pass, total } = await runTest(domains, { platform: 'browser' });
   console.log(`browser platform test results: ${(pass * 100 / total).toFixed(2)}%`);
