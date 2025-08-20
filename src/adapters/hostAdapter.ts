@@ -45,15 +45,20 @@ export class HostAdapter extends BaseCheckerAdapter {
       //   };
       // }
 
-      const isTimeout = err.killed && err.signal === 'SIGTERM' && err.code === null;
+      const isTimeout =
+        err?.message === 'timeout' || (err.killed && err.signal === 'SIGTERM' && err.code === null);
       return {
         domain,
         availability: 'unknown',
         source: 'dns.host',
         raw: null,
-        error: isTimeout
-          ? new Error(`Timed out after ${timeoutMs}ms`)
-          : err,
+        error: {
+          code: isTimeout ? 'TIMEOUT' : err.code || 'DNS_HOST_ERROR',
+          message: isTimeout
+            ? `Timed out after ${timeoutMs}ms`
+            : err.message || String(err),
+          retryable: true,
+        },
       };
     }
   }

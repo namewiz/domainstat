@@ -35,7 +35,11 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
           availability: 'unknown',
           source: 'whois.lib',
           raw: text,
-          error: new Error(`TLD '${domainObj.publicSuffix}' is not supported for whois`),
+          error: {
+            code: 'UNSUPPORTED_TLD',
+            message: `TLD '${domainObj.publicSuffix}' is not supported for whois`,
+            retryable: false,
+          },
         };
       }
       const availablePatterns = [
@@ -60,7 +64,13 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
         availability: 'unknown',
         source: 'whois.lib',
         raw: null,
-        error: isTimeout ? new Error(`Timed out after ${timeoutMs}ms`) : err,
+        error: {
+          code: isTimeout ? 'TIMEOUT' : err.code || 'WHOIS_LIB_ERROR',
+          message: isTimeout
+            ? `Timed out after ${timeoutMs}ms`
+            : err.message || String(err),
+          retryable: true,
+        },
       };
     }
   }

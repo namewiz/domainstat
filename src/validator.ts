@@ -19,9 +19,11 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
       availability: "invalid",
       resolver: "validator",
       raw: { validator: null },
-      error: new Error(
-        `Parse error: originalDomain: ${originalDomain}, parsedName: ${parsed.domain}, tld: ${parsed.publicSuffix}`
-      ),
+      error: {
+        code: "PARSE_ERROR",
+        message: `Parse error: originalDomain: ${originalDomain}, parsedName: ${parsed.domain}, tld: ${parsed.publicSuffix}`,
+        retryable: false,
+      },
     };
   }
 
@@ -33,7 +35,11 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
       availability: "unsupported",
       resolver: "validator",
       raw: { validator: null },
-      error: new Error(`TLD is not ICANN supported`),
+      error: {
+        code: "UNSUPPORTED_TLD",
+        message: `TLD is not ICANN supported`,
+        retryable: false,
+      },
     };
   }
 
@@ -45,7 +51,11 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
       availability: "unsupported",
       resolver: "validator",
       raw: { validator: null },
-      error: Error(`The library does not support the tld .${suffix}`),
+      error: {
+        code: "UNSUPPORTED_TLD",
+        message: `The library does not support the tld .${suffix}`,
+        retryable: false,
+      },
     };
   }
 

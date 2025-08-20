@@ -45,7 +45,13 @@ export class PingAdapter extends BaseCheckerAdapter {
         availability: 'unknown',
         source: 'dns.ping',
         raw: null,
-        error: isTimeout ? new Error(`Timed out after ${timeoutMs}ms`) : err,
+        error: {
+          code: isTimeout ? 'TIMEOUT' : err.code || 'PING_ERROR',
+          message: isTimeout
+            ? `Timed out after ${timeoutMs}ms`
+            : err.message || String(err),
+          retryable: true,
+        },
       };
     }
   }

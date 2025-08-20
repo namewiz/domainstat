@@ -68,12 +68,29 @@ export class WhoisApiAdapter extends BaseCheckerAdapter {
         raw: data,
       };
     } catch (err: any) {
+      const message = err?.message || String(err);
+      let code = err?.code || 'WHOIS_API_ERROR';
+      let retryable = true;
+      if (/api key missing/i.test(message)) {
+        code = 'API_KEY_MISSING';
+        retryable = false;
+      } else if (err?.quota || /429/.test(message)) {
+        code = 'RATE_LIMIT';
+        retryable = true;
+      } else if (err?.name === 'AbortError' || /timed out/i.test(message)) {
+        code = 'TIMEOUT';
+        retryable = true;
+      }
       return {
         domain,
         availability: 'unknown',
         source: 'whois.api',
         raw: null,
-        error: err,
+        error: {
+          code,
+          message,
+          retryable,
+        },
       };
     }
   }

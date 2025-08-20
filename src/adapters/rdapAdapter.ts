@@ -31,12 +31,17 @@ export class RdapAdapter extends BaseCheckerAdapter {
         };
       }
       if (!res.ok) {
+        const retryable = res.status === 429 || res.status >= 500;
         return {
           domain,
           availability: 'unknown',
           source: 'rdap',
           raw: text,
-          error: new Error(`rdap failed: ${res.status}`),
+          error: {
+            code: `HTTP_${res.status}`,
+            message: `rdap failed: ${res.status}`,
+            retryable,
+          },
         };
       }
       const data = JSON.parse(text);
@@ -47,12 +52,19 @@ export class RdapAdapter extends BaseCheckerAdapter {
         raw: data,
       };
     } catch (err: any) {
+      const isTimeout = err?.name === 'AbortError';
       return {
         domain,
         availability: 'unknown',
         source: 'rdap',
         raw: null,
-        error: err,
+        error: {
+          code: isTimeout ? 'TIMEOUT' : err.code || 'RDAP_ERROR',
+          message: isTimeout
+            ? `Timed out after ${timeoutMs}ms`
+            : err.message || String(err),
+          retryable: true,
+        },
       };
     } finally {
       clearTimeout(timer);
