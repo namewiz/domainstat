@@ -199,7 +199,7 @@ test.serial('.ng TLD tests with rdap', async (t) => {
   const domains = [...availableDomains, ...unavailableDomains];
   const { pass, total } = await runTest(domains, { only: ['rdap'] });
   console.log(`.ng test results: ${(pass * 100 / total).toFixed(2)}%`);
-  testSummary.ng = { pass, total, cutoff: 1 };
+  testSummary.ngRdap = { pass, total, cutoff: 1 };
   t.true(pass / total == 1);
 });
 
