@@ -3,6 +3,7 @@ import {
   AdapterResponse,
   CheckOptions,
   Platform,
+  AdapterError,
 } from './types';
 export type { DomainStatus } from './types';
 import { HostAdapter } from './adapters/hostAdapter';
@@ -73,7 +74,7 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
   const tldAdapter = getTldAdapter(parsed.publicSuffix);
 
   try {
-    let finalError: Error | undefined;
+    let finalError: AdapterError | undefined;
 
     let dnsResult: AdapterResponse | null = null;
     const usePing =
@@ -89,12 +90,16 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
           availability: 'unknown',
           source: dnsAdapter.namespace as any,
           raw: null,
-          error: err,
+          error: {
+            code: err?.code || 'DNS_ERROR',
+            message: err?.message || String(err),
+            retryable: true,
+          },
         };
       }
       raw[dnsAdapter.namespace] = dnsResult.raw;
       if (dnsResult.error) {
-        logger.warn('dns.failed', { domain: name, error: String(dnsResult.error) });
+        logger.warn('dns.failed', { domain: name, error: dnsResult.error.message });
         finalError = dnsResult.error;
       }
     }
@@ -119,7 +124,7 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
       });
       raw[rdapAdapter.namespace] = rdapRes.raw;
       if (rdapRes.error) {
-        logger.warn('rdap.failed', { domain: name, error: String(rdapRes.error) });
+        logger.warn('rdap.failed', { domain: name, error: rdapRes.error.message });
         finalError = rdapRes.error;
       } else {
         const result: DomainStatus = {
@@ -142,7 +147,7 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
       if (whoisRes.error) {
         logger.warn(
           tldAdapter?.whois ? 'whois.tld.failed' : isNode ? 'whois.lib.failed' : 'whois.api.failed',
-          { domain: name, error: String(whoisRes.error) }
+          { domain: name, error: whoisRes.error.message }
         );
         finalError = whoisRes.error;
       } else {

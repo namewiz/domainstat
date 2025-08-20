@@ -24,6 +24,12 @@ export enum Platform {
   BROWSER = 'browser',
 }
 
+export interface AdapterError {
+  code: string;
+  message: string;
+  retryable: boolean;
+}
+
 export interface AdapterResponse {
   domain: string;
   availability: Availability;
@@ -32,10 +38,10 @@ export interface AdapterResponse {
     | 'registered_not_in_use'
     | 'premium'
     | 'for_sale'
-    | 'reserved';
+  | 'reserved';
   source: AdapterSource;
   raw: any;
-  error?: Error;
+  error?: AdapterError;
 }
 
 export interface DomainStatus {
@@ -50,9 +56,9 @@ export interface DomainStatus {
   resolver: AdapterSource;
   /**
    * Raw responses from each adapter keyed by its namespace.
-   */
+  */
   raw: Record<string, any>;
-  error?: Error;
+  error?: AdapterError;
 }
 
 export type ParsedDomain = ParseResult;

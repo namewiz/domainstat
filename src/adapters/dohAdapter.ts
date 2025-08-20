@@ -28,12 +28,17 @@ export class DohAdapter extends BaseCheckerAdapter {
         signal: ac.signal,
       });
       if (!res.ok) {
+        const retryable = res.status === 429 || res.status >= 500;
         return {
           domain,
           availability: 'unknown',
           source: 'dns.doh',
           raw: null,
-          error: new Error(`doh query failed: ${res.status}`),
+          error: {
+            code: `HTTP_${res.status}`,
+            message: `doh query failed: ${res.status}`,
+            retryable,
+          },
         };
       }
       const data = await res.json();
@@ -46,12 +51,19 @@ export class DohAdapter extends BaseCheckerAdapter {
         raw: data,
       };
     } catch (err: any) {
+      const isTimeout = err?.name === 'AbortError';
       return {
         domain,
         availability: 'unknown',
         source: 'dns.doh',
         raw: null,
-        error: err,
+        error: {
+          code: isTimeout ? 'TIMEOUT' : err.code || 'DOH_ERROR',
+          message: isTimeout
+            ? `Timed out after ${timeoutMs}ms`
+            : err.message || String(err),
+          retryable: true,
+        },
       };
     } finally {
       clearTimeout(timer);

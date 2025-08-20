@@ -51,7 +51,13 @@ export class NgAdapter extends BaseCheckerAdapter {
         availability: 'unknown',
         source: this.namespace,
         raw: null,
-        error: isTimeout ? new Error(`Timed out after ${timeoutMs}ms`) : err,
+        error: {
+          code: isTimeout ? 'TIMEOUT' : err.code || 'NG_ADAPTER_ERROR',
+          message: isTimeout
+            ? `Timed out after ${timeoutMs}ms`
+            : err.message || String(err),
+          retryable: true,
+        },
       };
     }
   }

@@ -61,7 +61,7 @@ async function runTest(domains, opts = {}) {
       console.log(`PASSED: ${msg}`);
       pass++;
     } else {
-      const failMsg = `FAILED: ${msg}\n\t${res.error ?? 'No error message provided'}`;
+      const failMsg = `FAILED: ${msg}\n\t${res.error?.message ?? 'No error message provided'}`;
       console.error(`\x1b[31m${failMsg}\x1b[0m`);
     }
   }
