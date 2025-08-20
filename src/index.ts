@@ -50,6 +50,10 @@ function adapterAllowed(ns: string, opts: CheckOptions): boolean {
   return true;
 }
 
+function normalizeDomains(domains: string[]): string[] {
+  return Array.from(new Set(domains.map((d) => d.trim().toLowerCase())));
+}
+
 export async function check(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
   const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose
     ? opts.logger ?? console
@@ -181,7 +185,7 @@ export async function* checkBatchStream(
   domains: string[],
   opts: CheckOptions = {}
 ): AsyncGenerator<DomainStatus> {
-  const queue = [...domains];
+  const queue = [...normalizeDomains(domains)];
   const concurrency = opts.concurrency ?? MAX_CONCURRENCY;
   const active: Array<{ id: number; promise: Promise<{ id: number; res: DomainStatus }> }> = [];
   let idCounter = 0;
