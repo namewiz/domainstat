@@ -1,5 +1,5 @@
 import test from 'ava';
-import { checkBatchStream } from '../dist/index.js';
+import { checkBatchStream, checkBatch } from '../dist/index.js';
 import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
 import supportedTlDs from '../src/tlds.json' with { type: 'json' };
 
@@ -67,6 +67,11 @@ async function runTest(domains, opts = {}) {
   }
   return { pass, total: uniqueNames.length };
 }
+
+test('checkBatch removes duplicate domains', async (t) => {
+  const results = await checkBatch([' Example.invalidtld ', 'example.INVALIDTLD']);
+  t.deepEqual(results.map((r) => r.domain), ['example.invalidtld']);
+});
 
 test.serial('validator tests', async (t) => {
   const specialDomains = [
