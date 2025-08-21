@@ -155,6 +155,24 @@ test.serial.skip('whois.api unavailable status tests', async (t) => {
   t.true(pass / total >= 0.80);
 });
 
+test.serial('altstatus available status test', async (t) => {
+  const domains = [
+    { name: 'this-domain-should-not-exist-12345.com', availability: 'available' },
+  ];
+  const { pass, total } = await runTest(domains, { only: ['altstatus'] });
+  console.log(`altstatus available status test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.altStatusAvailable = { pass, total, cutoff: 1 };
+  t.true(pass / total >= 1);
+});
+
+test.serial('altstatus unavailable status test', async (t) => {
+  const domains = [{ name: 'example.com', availability: 'unavailable' }];
+  const { pass, total } = await runTest(domains, { only: ['altstatus'] });
+  console.log(`altstatus unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
+  testSummary.altStatusUnavailable = { pass, total, cutoff: 1 };
+  t.true(pass / total >= 1);
+});
+
 test.serial('rdap available status tests', async (t) => {
   const { pass, total } = await runTest(availableDomains, { only: ['rdap'] });
   console.log(`rdap available status test results: ${(pass * 100 / total).toFixed(2)}%`);

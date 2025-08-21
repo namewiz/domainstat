@@ -14,6 +14,9 @@ export type AdapterSource =
   | 'dns.doh'
   | 'rdap'
   | 'rdap.ng'
+  | 'altstatus'
+  | 'altstatus.domainr'
+  | 'altstatus.mono'
   | 'whois.lib'
   | 'whois.api'
   | 'app';
