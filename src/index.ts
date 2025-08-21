@@ -22,14 +22,7 @@ const host = new HostAdapter();
 const ping = new PingAdapter();
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
-const altStatus = new AltStatusAdapter(
-  typeof process !== 'undefined' ? (process.env.DOMAINR_API_KEY as string | undefined) : undefined,
-);
 const whoisLib = new WhoisLibAdapter();
-const whoisApi = new WhoisApiAdapter(
-  typeof process !== 'undefined' ? (process.env.WHOISFREAKS_API_KEY as string | undefined) : undefined,
-  typeof process !== 'undefined' ? (process.env.WHOISXML_API_KEY as string | undefined) : undefined
-);
 const noopLogger: Pick<Console, 'info' | 'warn' | 'error'> = {
   info: () => {},
   warn: () => {},
@@ -80,6 +73,12 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
   }
   const name = parsed.domain!;
   const tldAdapter = getTldAdapter(parsed.publicSuffix);
+
+  const altStatus = new AltStatusAdapter(opts.apiKeys?.domainr);
+  const whoisApi = new WhoisApiAdapter(
+    opts.apiKeys?.whoisfreaks,
+    opts.apiKeys?.whoisxml,
+  );
 
   try {
     let finalError: AdapterError | undefined;

@@ -70,6 +70,11 @@ interface CheckOptions {
   tldConfig?: TldConfigEntry;
   platform?: 'auto' | 'node' | 'browser';
   cache?: boolean;      // enable or disable caching (default true)
+  apiKeys?: {
+    domainr?: string;
+    whoisfreaks?: string;
+    whoisxml?: string;
+  };
 }
 ```
 
@@ -77,13 +82,23 @@ Logging is disabled unless `verbose` is set. When `platform` is `auto` the
 library detects the runtime and chooses suitable adapters. Set `cache: false`
 to disable caching.
 
-### WHOIS API Keys
+### API Keys
 
 When running in the browser or when a WHOIS lookup is required, the library can
-use paid APIs. Provide credentials through the following environment variables:
+use paid APIs. Provide credentials via the `apiKeys` option:
 
-- `WHOISFREAKS_API_KEY`
-- `WHOISXML_API_KEY`
+```ts
+check('example.com', {
+  apiKeys: {
+    domainr: 'DOMAINR_KEY',
+    whoisfreaks: 'WHOISFREAKS_KEY',
+    whoisxml: 'WHOISXML_KEY'
+  }
+});
+```
+
+The library does not read environment variables for credentials; all API keys
+must be supplied explicitly through `apiKeys`.
 
 ## Demo
 
