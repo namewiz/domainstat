@@ -73,22 +73,6 @@ test('checkBatch removes duplicate domains', async (t) => {
   t.deepEqual(results.map((r) => r.domain), ['example.invalidtld']);
 });
 
-test.serial('each adapter sets raw field', async (t) => {
-  const adapters = [
-    { ns: 'dns.host', opts: {} },
-    { ns: 'dns.doh', opts: { platform: 'browser' } },
-    { ns: 'dns.ping', opts: {} },
-    { ns: 'rdap', opts: {} },
-    { ns: 'altstatus', opts: {} },
-    { ns: 'whois.lib', opts: {} },
-  ];
-
-  for (const { ns, opts } of adapters) {
-    const [result] = await checkBatch(['example.com'], { only: [ns], ...opts });
-    t.true(Object.prototype.hasOwnProperty.call(result.raw, ns), `${ns} should set raw field`);
-  }
-});
-
 test.serial('validator tests', async (t) => {
   const specialDomains = [
     { name: 'www.example.com', availability: 'invalid' },
@@ -174,16 +158,23 @@ test.serial.skip('whois.api unavailable status tests', async (t) => {
 test.serial('altstatus available status test', async (t) => {
   const domains = [
     { name: 'this-domain-should-not-exist-12345.com', availability: 'available' },
+    { name: 'this-domain-should-not-exist-12345.dev', availability: 'available' },
+    { name: 'this-domain-should-not-exist-12345.ng', availability: 'available' },
+    { name: 'this-domain-should-not-exist-12345.com.ng', availability: 'available' },
   ];
-  const { pass, total } = await runTest(domains, { only: ['altstatus'] });
+  const { pass, total } = await runTest(domains, { only: ['altstatus'], apiKeys: {domainr: '7b6e2a71bcmshf310d57fbbe5248p135b4djsn3c1aa3c16ca3'} });
   console.log(`altstatus available status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.altStatusAvailable = { pass, total, cutoff: 1 };
   t.true(pass / total >= 1);
 });
 
 test.serial('altstatus unavailable status test', async (t) => {
-  const domains = [{ name: 'example.com', availability: 'unavailable' }];
-  const { pass, total } = await runTest(domains, { only: ['altstatus'] });
+  const domains = [
+    { name: 'google.dev', availability: 'unavailable' },
+    { name: 'jiji.ng', availability: 'unavailable' },
+    { name: 'amazon.com', availability: 'unavailable' },
+  ];
+  const { pass, total } = await runTest(domains, { only: ['altstatus'], apiKeys: {domainr: '7b6e2a71bcmshf310d57fbbe5248p135b4djsn3c1aa3c16ca3'} });
   console.log(`altstatus unavailable status test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.altStatusUnavailable = { pass, total, cutoff: 1 };
   t.true(pass / total >= 1);
@@ -244,6 +235,22 @@ test.serial('browser platform tests', async (t) => {
   console.log(`browser platform test results: ${(pass * 100 / total).toFixed(2)}%`);
   testSummary.browser = { pass, total, cutoff: 0.80 };
   t.true(pass / total >= 0.80);
+});
+
+test.serial('each adapter sets raw field', async (t) => {
+  const adapters = [
+    { ns: 'dns.host', opts: {} },
+    { ns: 'dns.doh', opts: { platform: 'browser' } },
+    { ns: 'dns.ping', opts: {} },
+    { ns: 'rdap', opts: {} },
+    { ns: 'altstatus', opts: {} },
+    { ns: 'whois.lib', opts: {} },
+  ];
+
+  for (const { ns, opts } of adapters) {
+    const [result] = await checkBatch(['example.com'], { only: [ns], ...opts });
+    t.true(Object.prototype.hasOwnProperty.call(result.raw, ns), `${ns} should set raw field`);
+  }
 });
 
 function printSummary() {

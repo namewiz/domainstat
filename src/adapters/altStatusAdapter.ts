@@ -1,7 +1,7 @@
 import { AdapterResponse, ParsedDomain } from '../types';
 import { BaseCheckerAdapter } from './baseAdapter';
 
-const DEFAULT_TIMEOUT_MS = 1000;
+const DEFAULT_TIMEOUT_MS = 2000;
 
 export class AltStatusAdapter extends BaseCheckerAdapter {
   private domainrKey?: string;
