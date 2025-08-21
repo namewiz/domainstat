@@ -62,7 +62,6 @@ result and `raw` contains the raw responses from each adapter.
 | --- | --- | --- |
 | domain | `string` | Domain that was checked. |
 | availability | `'available' \| 'unavailable' \| 'unsupported' \| 'invalid' \| 'unknown'` | Overall status of the domain. |
-| fineStatus? | `'expiring_soon' \| 'registered_not_in_use' \| 'premium' \| 'for_sale' \| 'reserved'` | Optional more granular status. |
 | resolver | `string` | Adapter namespace that produced the final result. |
 | raw | `Record<string, any>` | Raw responses keyed by adapter namespace. |
 | error? | `{ code: string; message: string; retryable: boolean }` | Optional error details if lookup failed. |
