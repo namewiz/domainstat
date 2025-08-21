@@ -12,6 +12,7 @@ import { DohAdapter } from './adapters/dohAdapter';
 import { RdapAdapter } from './adapters/rdapAdapter';
 import { WhoisLibAdapter } from './adapters/whoisLibAdapter';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
+import { AltStatusAdapter } from './adapters/altStatusAdapter';
 import { validateDomain } from './validator';
 import { parse } from 'tldts';
 import { getTldAdapter } from './tldAdapters';
@@ -21,6 +22,9 @@ const host = new HostAdapter();
 const ping = new PingAdapter();
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
+const altStatus = new AltStatusAdapter(
+  typeof process !== 'undefined' ? (process.env.DOMAINR_API_KEY as string | undefined) : undefined,
+);
 const whoisLib = new WhoisLibAdapter();
 const whoisApi = new WhoisApiAdapter(
   typeof process !== 'undefined' ? (process.env.WHOISFREAKS_API_KEY as string | undefined) : undefined,
@@ -135,6 +139,25 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
           domain: name,
           availability: rdapRes.availability,
           resolver: rdapRes.source,
+          raw,
+          error: undefined,
+        };
+        logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
+        return result;
+      }
+    }
+
+    if (adapterAllowed(altStatus.namespace, opts)) {
+      const statusRes = await altStatus.check(parsed, { cache: opts.cache });
+      raw[altStatus.namespace] = statusRes.raw;
+      if (statusRes.error) {
+        logger.warn('altstatus.failed', { domain: name, error: statusRes.error.message });
+        finalError = statusRes.error;
+      } else {
+        const result: DomainStatus = {
+          domain: name,
+          availability: statusRes.availability,
+          resolver: statusRes.source,
           raw,
           error: undefined,
         };
