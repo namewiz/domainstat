@@ -15,7 +15,7 @@ export class NgAdapter extends BaseCheckerAdapter {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), timeoutMs);
     // This bypasses secure connection, their cert is expired.
-    // process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    // (TLS checks must be disabled externally if required)
     try {
       const res = await fetch(
         `https://whois.nic.net.ng/domains?name=${domain}&exactMatch=true`,

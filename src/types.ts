@@ -97,4 +97,12 @@ export interface CheckOptions {
    * Enable or disable caching. Caching is enabled by default.
    */
   cache?: boolean;
+  /**
+   * API keys for third-party services.
+   */
+  apiKeys?: {
+    domainr?: string;
+    whoisfreaks?: string;
+    whoisxml?: string;
+  };
 }
