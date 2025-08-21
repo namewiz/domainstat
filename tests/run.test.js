@@ -73,6 +73,22 @@ test('checkBatch removes duplicate domains', async (t) => {
   t.deepEqual(results.map((r) => r.domain), ['example.invalidtld']);
 });
 
+test.serial('each adapter sets raw field', async (t) => {
+  const adapters = [
+    { ns: 'dns.host', opts: {} },
+    { ns: 'dns.doh', opts: { platform: 'browser' } },
+    { ns: 'dns.ping', opts: {} },
+    { ns: 'rdap', opts: {} },
+    { ns: 'altstatus', opts: {} },
+    { ns: 'whois.lib', opts: {} },
+  ];
+
+  for (const { ns, opts } of adapters) {
+    const [result] = await checkBatch(['example.com'], { only: [ns], ...opts });
+    t.true(Object.prototype.hasOwnProperty.call(result.raw, ns), `${ns} should set raw field`);
+  }
+});
+
 test.serial('validator tests', async (t) => {
   const specialDomains = [
     { name: 'www.example.com', availability: 'invalid' },
