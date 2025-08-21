@@ -29,21 +29,43 @@ npm install fast-domain-status
 ## Quick Start
 
 ```ts
-import { check, checkBatch, checkBatchStream } from 'fast-domain-status';
+import {
+  check,
+  checkBatch,
+  checkBatchStream,
+  type DomainStatus,
+} from 'fast-domain-status';
 
 const res = await check('example.com');
 // { domain: 'example.com', availability: 'unavailable', resolver: 'dns.host', raw: {...} }
 
-const batch = await checkBatch(['example.com', 'openai.org']);
+// checkBatch resolves to an array when all lookups finish
+const batch: DomainStatus[] = await checkBatch(['example.com', 'openai.org']);
 
+// checkBatchStream streams the array items as they complete
+const streamed: DomainStatus[] = [];
 for await (const item of checkBatchStream(['foo.dev', 'bar.io'])) {
-  console.log(item.domain, item.availability);
+  streamed.push(item);
 }
 ```
+
+Both batch helpers produce arrays of `DomainStatus`; `checkBatch` waits for all results,
+while `checkBatchStream` yields items as they become available.
 
 The `availability` field can be `available`, `unavailable`, `unsupported`,
 `invalid` or `unknown`. The `resolver` indicates which adapter produced the
 result and `raw` contains the raw responses from each adapter.
+
+### Response Schema
+
+| Field | Type | Description |
+| --- | --- | --- |
+| domain | `string` | Domain that was checked. |
+| availability | `'available' \| 'unavailable' \| 'unsupported' \| 'invalid' \| 'unknown'` | Overall status of the domain. |
+| fineStatus? | `'expiring_soon' \| 'registered_not_in_use' \| 'premium' \| 'for_sale' \| 'reserved'` | Optional more granular status. |
+| resolver | `string` | Adapter namespace that produced the final result. |
+| raw | `Record<string, any>` | Raw responses keyed by adapter namespace. |
+| error? | `{ code: string; message: string; retryable: boolean }` | Optional error details if lookup failed. |
 
 ## API
 
@@ -60,27 +82,37 @@ finishes.
 
 ### Options
 
-```ts
-interface CheckOptions {
-  logger?: Pick<Console, 'info' | 'warn' | 'error'>;
-  verbose?: boolean;
-  concurrency?: number; // used by batch helpers
-  only?: string[];       // run adapters whose namespace starts with these
-  skip?: string[];       // skip adapters whose namespace starts with these
-  tldConfig?: TldConfigEntry;
-  platform?: 'auto' | 'node' | 'browser';
-  cache?: boolean;      // enable or disable caching (default true)
-  apiKeys?: {
-    domainr?: string;
-    whoisfreaks?: string;
-    whoisxml?: string;
-  };
-}
-```
+| Option | Type | Description |
+| --- | --- | --- |
+| logger? | `Pick<Console, 'info' \| 'warn' \| 'error'>` | Custom logger used when `verbose` is true. |
+| verbose? | `boolean` | Enable logging output. |
+| concurrency? | `number` | Maximum concurrent lookups for batch helpers. |
+| only? | `string[]` | Run only adapters whose namespace starts with these prefixes. |
+| skip? | `string[]` | Skip adapters whose namespace starts with these prefixes. |
+| tldConfig? | `TldConfigEntry` | Per‑TLD overrides such as RDAP server. |
+| platform? | `'auto' \| 'node' \| 'browser'` | Force runtime platform. |
+| cache? | `boolean` | Enable or disable caching (default `true`). |
+| apiKeys? | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services. |
 
 Logging is disabled unless `verbose` is set. When `platform` is `auto` the
 library detects the runtime and chooses suitable adapters. Set `cache: false`
 to disable caching.
+
+### Adapters
+
+| Namespace | Description |
+| --- | --- |
+| `validator` | Validates domain syntax and supported TLDs. |
+| `dns.host` | DNS lookup using Node's resolver. |
+| `dns.ping` | ICMP ping as a DNS fallback (Node only). |
+| `dns.doh` | DNS-over-HTTPS lookup (Cloudflare). |
+| `rdap` | Generic RDAP query. |
+| `rdap.ng` | RDAP lookup for `.ng` domains. |
+| `altstatus.domainr` | Domain status via Domainr API. |
+| `altstatus.mono` | Domain status via Mono Domains API. |
+| `altstatus` | Fallback when status APIs fail. |
+| `whois.lib` | WHOIS lookup using `whois` library. |
+| `whois.api` | WHOIS lookup via external APIs. |
 
 ### API Keys
 
