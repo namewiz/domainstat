@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Domain Status Checker Demo</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/domainr-search-box/0.0.31/domainr-search-box.min.css" integrity="sha512-ToesibpXrPN9Hh2bWM1CspJRYky35QSSZx70FnCLm9S5MZ1XLDAYKdFQyOgnkGJyn0Vk1khV5ZqwnFxnzV8vuw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/domainr-search-box/0.0.31/domainr-search-box.min.js" integrity="sha512-XKXtdiGxIOsWNl3ZwlpRLTG8ViA60ru2EbJZhbhgBlvP0qp1fOmWh3ocEIvmpbdNZvI9EJJGfpOjEnJOI6Q0ig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+  <h1>Domain Status Checker Demo</h1>
+  <input type="search" placeholder="type domain query here" id="domainr-search" style="width: 500px" />
+  <div id="domainr-results"></div>
+  <script>
+    var box = new domainr.SearchBox({
+    mashapeKey: "7b6e2a71bcmshf310d57fbbe5248p135b4djsn3c1aa3c16ca3",
+    observe: document.getElementById("domainr-search"),
+    renderTo: document.getElementById("domainr-results"),
+    }); 
+  </script>
+
+</body>
+</html>

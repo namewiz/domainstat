@@ -62,7 +62,7 @@ async function runTest(domains, opts = {}) {
       pass++;
     } else {
       const failMsg = `FAILED: ${msg}\n\t${res.error?.message ?? 'No error message provided'}`;
-      console.error(`\x1b[31m${failMsg}\x1b[0m`);
+      console.error(`\x1b[31mError: ${failMsg}\x1b[0m`);
     }
   }
   return { pass, total: uniqueNames.length };
