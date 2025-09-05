@@ -13,10 +13,7 @@ export class PingAdapter extends BaseCheckerAdapter {
     super('dns.ping');
   }
 
-  protected async doCheck(
-    domainObj: ParsedDomain,
-    opts: { signal?: AbortSignal } = {},
-  ): Promise<AdapterResponse> {
+  protected async doCheck(domainObj: ParsedDomain, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const cmd = `ping -c 1 ${domain}`;
     try {
@@ -37,8 +34,7 @@ export class PingAdapter extends BaseCheckerAdapter {
       //     raw: false,
       //   };
       // }
-      const isTimeout =
-        err?.name === 'AbortError' || (err.killed && err.signal === 'SIGTERM' && err.code === null);
+      const isTimeout = err?.name === 'AbortError' || (err.killed && err.signal === 'SIGTERM' && err.code === null);
       return {
         domain,
         availability: 'unknown',
@@ -53,4 +49,3 @@ export class PingAdapter extends BaseCheckerAdapter {
     }
   }
 }
-

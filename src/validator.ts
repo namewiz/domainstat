@@ -1,4 +1,4 @@
-import tlds from "./tlds.json" assert { type: "json" };
+import tlds from './tlds.json' assert { type: 'json' };
 
 const tldMap: Record<string, string | boolean> = {
   ...(tlds as any).popular,
@@ -6,21 +6,17 @@ const tldMap: Record<string, string | boolean> = {
   ...(tlds as any).ccTLDs,
   ...(tlds as any).SLDs,
 };
-import { DomainStatus, ParsedDomain } from "./types.js";
+import { DomainStatus, ParsedDomain } from './types.js';
 
 export function validateDomain(parsed: ParsedDomain, originalDomain: string): DomainStatus {
-  if (
-    !parsed.domain ||
-    !parsed.publicSuffix ||
-    parsed.hostname !== parsed.domain
-  ) {
+  if (!parsed.domain || !parsed.publicSuffix || parsed.hostname !== parsed.domain) {
     return {
-      domain: parsed.hostname || "",
-      availability: "invalid",
-      resolver: "validator",
+      domain: parsed.hostname || '',
+      availability: 'invalid',
+      resolver: 'validator',
       raw: { validator: null },
       error: {
-        code: "PARSE_ERROR",
+        code: 'PARSE_ERROR',
         message: `Parse error: originalDomain: ${originalDomain}, parsedName: ${parsed.domain}, tld: ${parsed.publicSuffix}`,
         retryable: false,
       },
@@ -32,11 +28,11 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
   if (!parsed.isIcann) {
     return {
       domain,
-      availability: "unsupported",
-      resolver: "validator",
+      availability: 'unsupported',
+      resolver: 'validator',
       raw: { validator: null },
       error: {
-        code: "UNSUPPORTED_TLD",
+        code: 'UNSUPPORTED_TLD',
         message: `TLD is not ICANN supported`,
         retryable: false,
       },
@@ -48,11 +44,11 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
   if (!val) {
     return {
       domain,
-      availability: "unsupported",
-      resolver: "validator",
+      availability: 'unsupported',
+      resolver: 'validator',
       raw: { validator: null },
       error: {
-        code: "UNSUPPORTED_TLD",
+        code: 'UNSUPPORTED_TLD',
         message: `The library does not support the tld .${suffix}`,
         retryable: false,
       },
@@ -61,8 +57,8 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
 
   return {
     domain,
-    availability: "unknown",
-    resolver: "validator",
+    availability: 'unknown',
+    resolver: 'validator',
     raw: { validator: null },
   };
 }

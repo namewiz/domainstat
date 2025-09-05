@@ -8,10 +8,10 @@ export interface TldAdapter {
 }
 
 export const tldAdapters: Record<string, TldAdapter> = {
-  ng: { rdap: new NgAdapter('rdap', 'rdap.ng')},
-  'com.ng': { rdap: new NgAdapter('rdap', 'rdap.ng')},
-  'org.ng': { rdap: new NgAdapter('rdap', 'rdap.ng')},
-  'net.ng': { rdap: new NgAdapter('rdap', 'rdap.ng')},
+  ng: { rdap: new NgAdapter('rdap', 'rdap.ng') },
+  'com.ng': { rdap: new NgAdapter('rdap', 'rdap.ng') },
+  'org.ng': { rdap: new NgAdapter('rdap', 'rdap.ng') },
+  'net.ng': { rdap: new NgAdapter('rdap', 'rdap.ng') },
 };
 
 export function getTldAdapter(suffix?: string): TldAdapter | undefined {
@@ -21,4 +21,3 @@ export function getTldAdapter(suffix?: string): TldAdapter | undefined {
   const parts = lower.split('.');
   return tldAdapters[parts[parts.length - 1]];
 }
-

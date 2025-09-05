@@ -7,7 +7,11 @@
   "scripts": {
     "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=node --external:whois",
     "test": "npm run build && ava",
-    "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo"
+    "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "repository": {
     "type": "git",
@@ -28,10 +32,17 @@
   },
   "devDependencies": {
     "@types/node": "^24.1.0",
-    "ava": "^6.4.1"
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "ava": "^6.4.1",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.3.3"
   },
   "ava": {
-    "files": ["tests/**/*.test.js"],
+    "files": [
+      "tests/**/*.test.js"
+    ],
     "timeout": "3m"
   }
 }

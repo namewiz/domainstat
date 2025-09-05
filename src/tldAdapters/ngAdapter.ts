@@ -9,25 +9,16 @@ export class NgAdapter extends BaseCheckerAdapter {
     this.source = source;
   }
 
-  private async query(
-    domain: string,
-    signal?: AbortSignal,
-  ): Promise<{ exists: boolean; raw: any }> {
+  private async query(domain: string, signal?: AbortSignal): Promise<{ exists: boolean; raw: any }> {
     // This bypasses secure connection, their cert is expired.
     // (TLS checks must be disabled externally if required)
-    const res = await fetch(
-      `https://whois.nic.net.ng/domains?name=${domain}&exactMatch=true`,
-      { signal }
-    );
+    const res = await fetch(`https://whois.nic.net.ng/domains?name=${domain}&exactMatch=true`, { signal });
     const data = await res.json();
     const exists = Array.isArray(data.domainSearchResults) && data.domainSearchResults.length > 0;
     return { exists, raw: data };
   }
 
-  protected async doCheck(
-    domainObj: ParsedDomain,
-    opts: { signal?: AbortSignal } = {}
-  ): Promise<AdapterResponse> {
+  protected async doCheck(domainObj: ParsedDomain, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
 
     try {
@@ -40,9 +31,7 @@ export class NgAdapter extends BaseCheckerAdapter {
       };
     } catch (err: any) {
       const isTimeout =
-        err?.name === 'AbortError' ||
-        err?.code === 'ETIMEDOUT' ||
-        /timed out/i.test(String(err?.message));
+        err?.name === 'AbortError' || err?.code === 'ETIMEDOUT' || /timed out/i.test(String(err?.message));
       return {
         domain,
         availability: 'unknown',
@@ -57,4 +46,3 @@ export class NgAdapter extends BaseCheckerAdapter {
     }
   }
 }
-

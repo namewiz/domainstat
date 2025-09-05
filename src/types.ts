@@ -1,11 +1,6 @@
 import type { ParseResult } from 'tldts';
 
-export type Availability =
-  | 'available'
-  | 'unavailable'
-  | 'unsupported'
-  | 'invalid'
-  | 'unknown';
+export type Availability = 'available' | 'unavailable' | 'unsupported' | 'invalid' | 'unknown';
 
 export type AdapterSource =
   | 'validator'
@@ -36,12 +31,7 @@ export interface AdapterError {
 export interface AdapterResponse {
   domain: string;
   availability: Availability;
-  fineStatus?:
-    | 'expiring_soon'
-    | 'registered_not_in_use'
-    | 'premium'
-    | 'for_sale'
-  | 'reserved';
+  fineStatus?: 'expiring_soon' | 'registered_not_in_use' | 'premium' | 'for_sale' | 'reserved';
   source: AdapterSource;
   raw: any;
   error?: AdapterError;
@@ -50,16 +40,11 @@ export interface AdapterResponse {
 export interface DomainStatus {
   domain: string;
   availability: Availability;
-  fineStatus?:
-    | 'expiring_soon'
-    | 'registered_not_in_use'
-    | 'premium'
-    | 'for_sale'
-    | 'reserved';
+  fineStatus?: 'expiring_soon' | 'registered_not_in_use' | 'premium' | 'for_sale' | 'reserved';
   resolver: AdapterSource;
   /**
    * Raw responses from each adapter keyed by its namespace.
-  */
+   */
   raw: Record<string, any>;
   error?: AdapterError;
 }
@@ -71,7 +56,7 @@ export interface CheckerAdapter {
   namespace: string;
   check(
     domainObj: ParsedDomain,
-    opts?: { tldConfig?: TldConfigEntry; cache?: boolean; signal?: AbortSignal }
+    opts?: { tldConfig?: TldConfigEntry; cache?: boolean; signal?: AbortSignal },
   ): Promise<AdapterResponse>;
 }
 

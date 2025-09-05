@@ -10,7 +10,7 @@ export class RdapAdapter extends BaseCheckerAdapter {
 
   protected async doCheck(
     domainObj: ParsedDomain,
-    opts: { tldConfig?: TldConfigEntry; signal?: AbortSignal } = {}
+    opts: { tldConfig?: TldConfigEntry; signal?: AbortSignal } = {},
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const baseUrl = opts.tldConfig?.rdapServer || this.baseUrl;

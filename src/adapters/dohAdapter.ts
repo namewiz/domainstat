@@ -11,10 +11,7 @@ export class DohAdapter extends BaseCheckerAdapter {
     this.url = url;
   }
 
-  protected async doCheck(
-    domainObj: ParsedDomain,
-    opts: { signal?: AbortSignal } = {},
-  ): Promise<AdapterResponse> {
+  protected async doCheck(domainObj: ParsedDomain, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     try {
       const params = new URLSearchParams({ name: domain, type: 'A' });

@@ -29,14 +29,7 @@ npm install fast-domain-status
 ## Quick Start
 
 ```ts
-import {
-  check,
-  checkBatch,
-  checkBatchStream,
-  checkSerial,
-  checkParallel,
-  type DomainStatus,
-} from 'fast-domain-status';
+import { check, checkBatch, checkBatchStream, checkSerial, checkParallel, type DomainStatus } from 'fast-domain-status';
 
 const res = await check('example.com');
 // { domain: 'example.com', availability: 'unavailable', resolver: 'dns.host', raw: {...} }
@@ -63,47 +56,52 @@ result and `raw` contains the raw responses from each adapter.
 
 ### Response Schema
 
-| Field | Type | Description |
-| --- | --- | --- |
-| domain | `string` | Domain that was checked. |
-| availability | `'available' \| 'unavailable' \| 'unsupported' \| 'invalid' \| 'unknown'` | Overall status of the domain. |
-| resolver | `string` | Adapter namespace that produced the final result. |
-| raw | `Record<string, any>` | Raw responses keyed by adapter namespace. |
-| error? | `{ code: string; message: string; retryable: boolean }` | Optional error details if lookup failed. |
+| Field        | Type                                                                      | Description                                       |
+| ------------ | ------------------------------------------------------------------------- | ------------------------------------------------- |
+| domain       | `string`                                                                  | Domain that was checked.                          |
+| availability | `'available' \| 'unavailable' \| 'unsupported' \| 'invalid' \| 'unknown'` | Overall status of the domain.                     |
+| resolver     | `string`                                                                  | Adapter namespace that produced the final result. |
+| raw          | `Record<string, any>`                                                     | Raw responses keyed by adapter namespace.         |
+| error?       | `{ code: string; message: string; retryable: boolean }`                   | Optional error details if lookup failed.          |
 
 ## API
 
 ### `check(domain, options?)`
+
 Checks a single domain and resolves to a `DomainStatus` object.
 
 ### `checkSerial(domain, options?)`
+
 Sequential version of `check` that invokes adapters one after another.
 
 ### `checkParallel(domain, options?)`
+
 Runs all adapters concurrently and aborts pending ones once a result is found.
 
 ### `checkBatch(domains, options?)`
+
 Checks multiple domains concurrently and resolves to an array of
 `DomainStatus` objects.
 
 ### `checkBatchStream(domains, options?)`
+
 Returns an async generator yielding `DomainStatus` for each domain as soon as it
 finishes.
 
 ### Options
 
-| Option | Type | Description |
-| --- | --- | --- |
-| logger? | `Pick<Console, 'info' \| 'warn' \| 'error'>` | Custom logger used when `verbose` is true. |
-| verbose? | `boolean` | Enable logging output. |
-| concurrency? | `number` | Maximum concurrent lookups for batch helpers. |
-| only? | `string[]` | Run only adapters whose namespace starts with these prefixes. |
-| skip? | `string[]` | Skip adapters whose namespace starts with these prefixes. |
-| tldConfig? | `TldConfigEntry` | Per‑TLD overrides such as RDAP server. |
-| platform? | `'auto' \| 'node' \| 'browser'` | Force runtime platform. |
-| cache? | `boolean` | Enable or disable caching (default `true`). |
-| apiKeys? | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services. |
-| burstMode? | `boolean` | When true, use `checkParallel` to query all adapters simultaneously. |
+| Option       | Type                                                            | Description                                                          |
+| ------------ | --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| logger?      | `Pick<Console, 'info' \| 'warn' \| 'error'>`                    | Custom logger used when `verbose` is true.                           |
+| verbose?     | `boolean`                                                       | Enable logging output.                                               |
+| concurrency? | `number`                                                        | Maximum concurrent lookups for batch helpers.                        |
+| only?        | `string[]`                                                      | Run only adapters whose namespace starts with these prefixes.        |
+| skip?        | `string[]`                                                      | Skip adapters whose namespace starts with these prefixes.            |
+| tldConfig?   | `TldConfigEntry`                                                | Per‑TLD overrides such as RDAP server.                               |
+| platform?    | `'auto' \| 'node' \| 'browser'`                                 | Force runtime platform.                                              |
+| cache?       | `boolean`                                                       | Enable or disable caching (default `true`).                          |
+| apiKeys?     | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services.                                   |
+| burstMode?   | `boolean`                                                       | When true, use `checkParallel` to query all adapters simultaneously. |
 
 Logging is disabled unless `verbose` is set. When `platform` is `auto` the
 library detects the runtime and chooses suitable adapters. Set `cache: false`
@@ -111,19 +109,19 @@ to disable caching.
 
 ### Adapters
 
-| Namespace | Description |
-| --- | --- |
-| `validator` | Validates domain syntax and supported TLDs. |
-| `dns.host` | DNS lookup using Node's resolver. |
-| `dns.ping` | ICMP ping as a DNS fallback (Node only). |
-| `dns.doh` | DNS-over-HTTPS lookup (Cloudflare). |
-| `rdap` | Generic RDAP query. |
-| `rdap.ng` | RDAP lookup for `.ng` domains. |
-| `altstatus.domainr` | Domain status via Domainr API. |
-| `altstatus.mono` | Domain status via Mono Domains API. |
-| `altstatus` | Fallback when status APIs fail. |
-| `whois.lib` | WHOIS lookup using `whois` library. |
-| `whois.api` | WHOIS lookup via external APIs. |
+| Namespace           | Description                                 |
+| ------------------- | ------------------------------------------- |
+| `validator`         | Validates domain syntax and supported TLDs. |
+| `dns.host`          | DNS lookup using Node's resolver.           |
+| `dns.ping`          | ICMP ping as a DNS fallback (Node only).    |
+| `dns.doh`           | DNS-over-HTTPS lookup (Cloudflare).         |
+| `rdap`              | Generic RDAP query.                         |
+| `rdap.ng`           | RDAP lookup for `.ng` domains.              |
+| `altstatus.domainr` | Domain status via Domainr API.              |
+| `altstatus.mono`    | Domain status via Mono Domains API.         |
+| `altstatus`         | Fallback when status APIs fail.             |
+| `whois.lib`         | WHOIS lookup using `whois` library.         |
+| `whois.api`         | WHOIS lookup via external APIs.             |
 
 ### API Keys
 
@@ -135,8 +133,8 @@ check('example.com', {
   apiKeys: {
     domainr: 'DOMAINR_KEY',
     whoisfreaks: 'WHOISFREAKS_KEY',
-    whoisxml: 'WHOISXML_KEY'
-  }
+    whoisxml: 'WHOISXML_KEY',
+  },
 });
 ```
 
@@ -164,4 +162,3 @@ npm test
 ## License
 
 ISC
-

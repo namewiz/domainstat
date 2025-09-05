@@ -29,10 +29,7 @@ export class AltStatusAdapter extends BaseCheckerAdapter {
     return JSON.parse(text);
   }
 
-  protected async doCheck(
-    domainObj: ParsedDomain,
-    opts: { signal?: AbortSignal } = {},
-  ): Promise<AdapterResponse> {
+  protected async doCheck(domainObj: ParsedDomain, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     try {
       if (this.domainrKey) {

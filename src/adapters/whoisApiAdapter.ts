@@ -32,10 +32,7 @@ export class WhoisApiAdapter extends BaseCheckerAdapter {
     return JSON.parse(text);
   }
 
-  protected async doCheck(
-    domainObj: ParsedDomain,
-    opts: { signal?: AbortSignal } = {},
-  ): Promise<AdapterResponse> {
+  protected async doCheck(domainObj: ParsedDomain, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     try {
       let data: any;
@@ -50,8 +47,7 @@ export class WhoisApiAdapter extends BaseCheckerAdapter {
       }
 
       const text = JSON.stringify(data).toLowerCase();
-      const isAvailable =
-        text.includes('n/a') || text.includes('no match') || text.includes('not found');
+      const isAvailable = text.includes('n/a') || text.includes('no match') || text.includes('not found');
       return {
         domain,
         availability: isAvailable ? 'available' : 'unavailable',

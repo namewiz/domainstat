@@ -28,10 +28,7 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
   constructor() {
     super('whois.lib');
   }
-  protected async doCheck(
-    domainObj: ParsedDomain,
-    opts: { signal?: AbortSignal } = {},
-  ): Promise<AdapterResponse> {
+  protected async doCheck(domainObj: ParsedDomain, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     try {
       const stdout = await lookup(domain, opts.signal);

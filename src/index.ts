@@ -1,11 +1,4 @@
-import {
-  DomainStatus,
-  AdapterResponse,
-  CheckOptions,
-  Platform,
-  AdapterError,
-  AdapterSource,
-} from './types';
+import { DomainStatus, AdapterResponse, CheckOptions, Platform, AdapterError, AdapterSource } from './types';
 export type { DomainStatus } from './types';
 import { HostAdapter } from './adapters/hostAdapter';
 import { PingAdapter } from './adapters/pingAdapter';
@@ -31,11 +24,7 @@ const noopLogger: Pick<Console, 'info' | 'warn' | 'error'> = {
 };
 
 function detectNode(): boolean {
-  return (
-    typeof process !== 'undefined' &&
-    process.versions != null &&
-    process.versions.node != null
-  );
+  return typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
 }
 
 function adapterAllowed(ns: string, opts: CheckOptions): boolean {
@@ -53,9 +42,7 @@ function normalizeDomains(domains: string[]): string[] {
 }
 
 export async function checkSerial(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
-  const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose
-    ? opts.logger ?? console
-    : noopLogger;
+  const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose ? (opts.logger ?? console) : noopLogger;
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
   const platform = opts.platform ?? Platform.AUTO;
@@ -76,10 +63,7 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   const tldAdapter = getTldAdapter(parsed.publicSuffix);
 
   const altStatus = new AltStatusAdapter(opts.apiKeys?.domainr);
-  const whoisApi = new WhoisApiAdapter(
-    opts.apiKeys?.whoisfreaks,
-    opts.apiKeys?.whoisxml,
-  );
+  const whoisApi = new WhoisApiAdapter(opts.apiKeys?.whoisfreaks, opts.apiKeys?.whoisxml);
 
   const controller = new AbortController();
   const signal = controller.signal;
@@ -126,9 +110,7 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   const getTimeout = (ns: AdapterSource) => opts.timeoutConfig?.[ns] ?? 200;
 
   const sequence: Array<{ adapter: any; options: any }> = [];
-  const usePing =
-    opts.only?.some((p) => p.startsWith('dns.ping')) ||
-    opts.skip?.some((p) => p.startsWith('dns.host'));
+  const usePing = opts.only?.some((p) => p.startsWith('dns.ping')) || opts.skip?.some((p) => p.startsWith('dns.host'));
   const dnsAdapter = tldAdapter?.dns ?? (isNode ? (usePing ? ping : host) : doh);
   if (adapterAllowed(dnsAdapter.namespace, opts)) {
     sequence.push({ adapter: dnsAdapter, options: { cache: opts.cache, signal } });
@@ -170,13 +152,8 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   return finalResult;
 }
 
-export async function checkParallel(
-  domain: string,
-  opts: CheckOptions = {},
-): Promise<DomainStatus> {
-  const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose
-    ? opts.logger ?? console
-    : noopLogger;
+export async function checkParallel(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
+  const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose ? (opts.logger ?? console) : noopLogger;
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
   const platform = opts.platform ?? Platform.AUTO;
@@ -197,10 +174,7 @@ export async function checkParallel(
   const tldAdapter = getTldAdapter(parsed.publicSuffix);
 
   const altStatus = new AltStatusAdapter(opts.apiKeys?.domainr);
-  const whoisApi = new WhoisApiAdapter(
-    opts.apiKeys?.whoisfreaks,
-    opts.apiKeys?.whoisxml,
-  );
+  const whoisApi = new WhoisApiAdapter(opts.apiKeys?.whoisfreaks, opts.apiKeys?.whoisxml);
 
   const controller = new AbortController();
   const signal = controller.signal;
@@ -256,8 +230,7 @@ export async function checkParallel(
     };
 
     const usePing =
-      opts.only?.some((p) => p.startsWith('dns.ping')) ||
-      opts.skip?.some((p) => p.startsWith('dns.host'));
+      opts.only?.some((p) => p.startsWith('dns.ping')) || opts.skip?.some((p) => p.startsWith('dns.host'));
     const dnsAdapter = tldAdapter?.dns ?? (isNode ? (usePing ? ping : host) : doh);
     if (adapterAllowed(dnsAdapter.namespace, opts)) {
       launch(dnsAdapter, { cache: opts.cache, signal });
@@ -287,10 +260,7 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
   return opts.burstMode ? checkParallel(domain, opts) : checkSerial(domain, opts);
 }
 
-export async function* checkBatchStream(
-  domains: string[],
-  opts: CheckOptions = {}
-): AsyncGenerator<DomainStatus> {
+export async function* checkBatchStream(domains: string[], opts: CheckOptions = {}): AsyncGenerator<DomainStatus> {
   const queue = [...normalizeDomains(domains)];
   const concurrency = opts.concurrency ?? MAX_CONCURRENCY;
   const active: Array<{ id: number; promise: Promise<{ id: number; res: DomainStatus }> }> = [];
@@ -319,10 +289,7 @@ export async function* checkBatchStream(
   }
 }
 
-export async function checkBatch(
-  domains: string[],
-  opts: CheckOptions = {},
-): Promise<DomainStatus[]> {
+export async function checkBatch(domains: string[], opts: CheckOptions = {}): Promise<DomainStatus[]> {
   const results: DomainStatus[] = [];
 
   for await (const res of checkBatchStream(domains, opts)) {
@@ -331,4 +298,3 @@ export async function checkBatch(
 
   return results;
 }
-
