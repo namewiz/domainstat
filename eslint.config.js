@@ -62,4 +62,3 @@ export default [
   // Disable stylistic rules that conflict with Prettier
   eslintConfigPrettier,
 ];
-

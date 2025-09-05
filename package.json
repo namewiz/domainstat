@@ -26,6 +26,10 @@
     ".": "./dist/index.js"
   },
   "license": "ISC",
+  "engines": {
+    "node": "^22.12.0",
+    "npm": "^10.9.0"
+  },
   "dependencies": {
     "tldts": "^7.0.10",
     "whois": "^2.15.0"

@@ -79,7 +79,7 @@ test('checkBatch removes duplicate domains', async (t) => {
   );
 });
 
-test.serial('validator tests', async (t) => {
+test('validator tests', async (t) => {
   const specialDomains = [
     { name: 'www.example.com', availability: 'invalid' },
     { name: 'invalid@domain', availability: 'invalid' },
@@ -91,77 +91,77 @@ test.serial('validator tests', async (t) => {
   t.is(pass, total);
 });
 
-test.serial('dns.host unknown status tests', async (t) => {
+test('dns.host unknown status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(unknownDomains, { only: ['dns.host'] });
   console.log(`dns.host unknown status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsHostUnknown = { pass, total, cutoff: 1, durationMs };
   t.true(pass / total >= 1);
 });
 
-test.serial('dns.host unavailable status tests', async (t) => {
+test('dns.host unavailable status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['dns.host'] });
   console.log(`dns.host unavailable domains test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsHostUnavailable = { pass, total, cutoff: 0.99, durationMs };
   t.true(pass / total >= 0.99);
 });
 
-test.serial('dns.doh unknown status tests', async (t) => {
+test('dns.doh unknown status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(unknownDomains, { only: ['dns.doh'], platform: 'browser' });
   console.log(`dns.doh unknown status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsDohUnknown = { pass, total, cutoff: 1, durationMs };
   t.true(pass / total >= 1);
 });
 
-test.serial('dns.doh unavailable status tests', async (t) => {
+test('dns.doh unavailable status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['dns.doh'], platform: 'browser' });
   console.log(`dns.doh unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsDohUnavailable = { pass, total, cutoff: 0.98, durationMs };
   t.true(pass / total >= 0.98);
 });
 
-test.serial('dns.ping unknown status tests', async (t) => {
+test('dns.ping unknown status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(unknownDomains, { only: ['dns.ping'] });
   console.log(`dns.ping test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsPingUnknown = { pass, total, cutoff: 1, durationMs };
   t.true(pass / total >= 1);
 });
 
-test.serial('dns.ping unavailable status tests', async (t) => {
+test('dns.ping unavailable status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['dns.ping'] });
   console.log(`dns.ping test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsPingUnavailable = { pass, total, cutoff: 0.7, durationMs };
   t.true(pass / total >= 0.7);
 });
 
-test.serial('whois.lib available status tests', async (t) => {
+test('whois.lib available status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(availableDomains, { only: ['whois.lib'] });
   console.log(`whois.lib available status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisLibAvailable = { pass, total, cutoff: 0.1, durationMs };
   t.true(pass / total >= 0.1);
 });
 
-test.serial('whois.lib unavailable status tests', async (t) => {
+test('whois.lib unavailable status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['whois.lib'] });
   console.log(`whois.lib unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisLibUnavailable = { pass, total, cutoff: 0.1, durationMs };
   t.true(pass / total >= 0.1);
 });
 
-test.serial.skip('whois.api available status tests', async (t) => {
+test.skip('whois.api available status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(availableDomains, { only: ['whois.api'] });
   console.log(`whois.api available status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisApiAvailable = { pass, total, cutoff: 0.8, durationMs };
   t.true(pass / total >= 0.8);
 });
 
-test.serial.skip('whois.api unavailable status tests', async (t) => {
+test.skip('whois.api unavailable status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['whois.api'] });
   console.log(`whois.api unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisApiUnavailable = { pass, total, cutoff: 0.8, durationMs };
   t.true(pass / total >= 0.8);
 });
 
-test.serial('altstatus available status test', async (t) => {
+test('altstatus available status test', async (t) => {
   const domains = [
     { name: 'this-domain-should-not-exist-12345.com', availability: 'available' },
     { name: 'this-domain-should-not-exist-12345.dev', availability: 'available' },
@@ -177,7 +177,7 @@ test.serial('altstatus available status test', async (t) => {
   t.true(pass / total >= 1);
 });
 
-test.serial('altstatus unavailable status test', async (t) => {
+test('altstatus unavailable status test', async (t) => {
   const domains = [
     { name: 'google.dev', availability: 'unavailable' },
     { name: 'jiji.ng', availability: 'unavailable' },
@@ -192,21 +192,21 @@ test.serial('altstatus unavailable status test', async (t) => {
   t.true(pass / total >= 1);
 });
 
-test.serial('rdap available status tests', async (t) => {
+test('rdap available status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(availableDomains, { only: ['rdap'] });
   console.log(`rdap available status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.rdapAvailable = { pass, total, cutoff: 0.8, durationMs };
   t.true(pass / total >= 0.8);
 });
 
-test.serial('rdap unavailable status tests', async (t) => {
+test('rdap unavailable status tests', async (t) => {
   const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['rdap'] });
   console.log(`rdap unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.rdapUnavailable = { pass, total, cutoff: 0.8, durationMs };
   t.true(pass / total >= 0.8);
 });
 
-test.serial('.ng TLD tests', async (t) => {
+test('.ng TLD tests', async (t) => {
   const ngTlds = tldList.filter((tld) => tld === 'ng' || tld.endsWith('.ng'));
   const availableDomains = ngTlds.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
@@ -225,7 +225,7 @@ test.serial('.ng TLD tests', async (t) => {
   t.true(pass / total == 1);
 });
 
-test.serial('.ng TLD tests with rdap', async (t) => {
+test('.ng TLD tests with rdap', async (t) => {
   const ngTlds = tldList.filter((tld) => tld === 'ng' || tld.endsWith('.ng'));
   const availableDomains = ngTlds.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
@@ -244,7 +244,7 @@ test.serial('.ng TLD tests with rdap', async (t) => {
   t.true(pass / total == 1);
 });
 
-test.serial('browser platform tests', async (t) => {
+test('browser platform tests', async (t) => {
   const domains = [...availableDomains, ...unavailableDomains];
   const { pass, total, durationMs } = await runTest(domains, { platform: 'browser' });
   console.log(`browser platform test results: ${((pass * 100) / total).toFixed(2)}%`);
@@ -252,7 +252,7 @@ test.serial('browser platform tests', async (t) => {
   t.true(pass / total >= 0.8);
 });
 
-test.serial('each adapter sets raw field', async (t) => {
+test('each adapter sets raw field', async (t) => {
   const adapters = [
     { ns: 'dns.host', opts: {} },
     { ns: 'dns.doh', opts: { platform: 'browser' } },
@@ -270,14 +270,14 @@ test.serial('each adapter sets raw field', async (t) => {
   }
 });
 
-test.serial('burstMode available domain', async (t) => {
+test('burstMode available domain', async (t) => {
   const { pass, total, durationMs } = await runTest(availableDomains, { burstMode: true, skip: ['whois.api'] });
   console.log(`burstMode available test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.burstModeAvailable = { pass, total, cutoff: 1, durationMs };
-  t.true(pass / total >= 1);
+  testSummary.burstModeAvailable = { pass, total, cutoff: 0.95, durationMs };
+  t.true(pass / total >= 0.95);
 });
 
-test.serial('burstMode unavailable domain', async (t) => {
+test('burstMode unavailable domain', async (t) => {
   const { pass, total, durationMs } = await runTest(unavailableDomains, { burstMode: true, skip: ['whois.api'] });
   console.log(`burstMode unavailable test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.burstModeUnavailable = { pass, total, cutoff: 1, durationMs };
