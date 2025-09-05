@@ -1,8 +1,6 @@
 import { AdapterResponse, ParsedDomain } from '../types';
 import { BaseCheckerAdapter } from './baseAdapter';
 
-const DEFAULT_TIMEOUT_MS = 1000;
-
 // If this host device has a WIFI DNS override, it would intefer with this adapter.
 export class DohAdapter extends BaseCheckerAdapter {
   private url: string;
@@ -15,18 +13,15 @@ export class DohAdapter extends BaseCheckerAdapter {
 
   protected async doCheck(
     domainObj: ParsedDomain,
-      opts: { timeoutMs?: number; signal?: AbortSignal } = {},
+    opts: { signal?: AbortSignal } = {},
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
-    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-      const ac = new AbortController();
-      const timer = setTimeout(() => ac.abort(), timeoutMs);
     try {
       const params = new URLSearchParams({ name: domain, type: 'A' });
-        const res = await fetch(`${this.url}?${params.toString()}`, {
-          headers: { accept: 'application/dns-json' },
-          signal: opts.signal ? AbortSignal.any([opts.signal, ac.signal]) : ac.signal,
-        });
+      const res = await fetch(`${this.url}?${params.toString()}`, {
+        headers: { accept: 'application/dns-json' },
+        signal: opts.signal,
+      });
       if (!res.ok) {
         const retryable = res.status === 429 || res.status >= 500;
         return {
@@ -43,10 +38,10 @@ export class DohAdapter extends BaseCheckerAdapter {
       }
       const data = await res.json();
       const answers = data.Answer || [];
-      const available = answers.length === 0;
+      const unknown = answers.length === 0;
       return {
         domain,
-        availability: available ? 'available' : 'unavailable',
+        availability: unknown ? 'unknown' : 'unavailable',
         source: 'dns.doh',
         raw: data,
       };
@@ -59,14 +54,10 @@ export class DohAdapter extends BaseCheckerAdapter {
         raw: null,
         error: {
           code: isTimeout ? 'TIMEOUT' : err.code || 'DOH_ERROR',
-          message: isTimeout
-            ? `Timed out after ${timeoutMs}ms`
-            : err.message || String(err),
+          message: err.message || String(err),
           retryable: true,
         },
       };
-    } finally {
-      clearTimeout(timer);
     }
   }
 }

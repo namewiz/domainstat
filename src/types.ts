@@ -71,7 +71,7 @@ export interface CheckerAdapter {
   namespace: string;
   check(
     domainObj: ParsedDomain,
-    opts?: { timeoutMs?: number; tldConfig?: TldConfigEntry; cache?: boolean; signal?: AbortSignal }
+    opts?: { tldConfig?: TldConfigEntry; cache?: boolean; signal?: AbortSignal }
   ): Promise<AdapterResponse>;
 }
 
@@ -107,4 +107,9 @@ export interface CheckOptions {
   };
   /** When true, run adapters in parallel */
   burstMode?: boolean;
+  /**
+   * Time to wait before launching the next adapter in serial mode, keyed by adapter namespace.
+   * Default is 200ms for any adapter not specified.
+   */
+  timeoutConfig?: Partial<Record<AdapterSource, number>>;
 }

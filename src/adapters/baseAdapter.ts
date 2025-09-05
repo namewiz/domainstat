@@ -1,6 +1,6 @@
 import { CheckerAdapter, AdapterResponse, ParsedDomain, TldConfigEntry, AdapterSource } from '../types';
 
-type BaseOpts = { timeoutMs?: number; tldConfig?: TldConfigEntry; cache?: boolean; signal?: AbortSignal };
+type BaseOpts = { tldConfig?: TldConfigEntry; cache?: boolean; signal?: AbortSignal };
 
 export abstract class BaseCheckerAdapter implements CheckerAdapter {
   public readonly namespace: AdapterSource;
@@ -24,16 +24,16 @@ export abstract class BaseCheckerAdapter implements CheckerAdapter {
       }
     }
 
-      const { cache, ...rest } = opts;
-      const res = await this.doCheck(domainObj, rest);
+    const { cache, ...rest } = opts;
+    const res = await this.doCheck(domainObj, rest);
     if (cacheEnabled && (!res.error || res.error.retryable === false)) {
       BaseCheckerAdapter.cache.set(key, res);
     }
     return res;
   }
 
-    protected abstract doCheck(
-      domainObj: ParsedDomain,
-      opts?: { timeoutMs?: number; tldConfig?: TldConfigEntry; signal?: AbortSignal },
-    ): Promise<AdapterResponse>;
+  protected abstract doCheck(
+    domainObj: ParsedDomain,
+    opts?: { tldConfig?: TldConfigEntry; signal?: AbortSignal },
+  ): Promise<AdapterResponse>;
 }

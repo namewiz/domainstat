@@ -4,6 +4,7 @@ import {
   CheckOptions,
   Platform,
   AdapterError,
+  AdapterSource,
 } from './types';
 export type { DomainStatus } from './types';
 import { HostAdapter } from './adapters/hostAdapter';
@@ -80,127 +81,93 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
     opts.apiKeys?.whoisxml,
   );
 
-  try {
-    let finalError: AdapterError | undefined;
+  const controller = new AbortController();
+  const signal = controller.signal;
+  const done = new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve()));
 
-    let dnsResult: AdapterResponse | null = null;
-    const usePing =
-      opts.only?.some((p) => p.startsWith('dns.ping')) ||
-      opts.skip?.some((p) => p.startsWith('dns.host'));
-    const dnsAdapter = tldAdapter?.dns ?? (isNode ? (usePing ? ping : host) : doh);
-    if (adapterAllowed(dnsAdapter.namespace, opts)) {
-      try {
-        dnsResult = await dnsAdapter.check(parsed, { cache: opts.cache });
-      } catch (err: any) {
-        dnsResult = {
+  let finalError: AdapterError | undefined;
+  let result: DomainStatus | null = null;
+  const running: Promise<void>[] = [];
+
+  const handleResponse = (res: AdapterResponse) => {
+    raw[res.source] = res.raw;
+    if (!signal.aborted && !res.error && res.availability !== 'unknown') {
+      controller.abort();
+      result = { domain: name, availability: res.availability, resolver: res.source, raw, error: undefined };
+      return;
+    }
+    if (res.error) {
+      logger.warn(`${res.source}.failed`, { domain: name, error: res.error.message });
+      finalError = res.error;
+    }
+  };
+
+  const launch = (adapter: any, options: any) => {
+    const p = adapter
+      .check(parsed, options)
+      .then(handleResponse)
+      .catch((err: any) => {
+        handleResponse({
           domain: name,
           availability: 'unknown',
-          source: dnsAdapter.namespace as any,
+          source: adapter.namespace,
           raw: null,
           error: {
-            code: err?.code || 'DNS_ERROR',
+            code: err?.code || 'ADAPTER_ERROR',
             message: err?.message || String(err),
             retryable: true,
           },
-        };
-      }
-      raw[dnsAdapter.namespace] = dnsResult.raw;
-      if (dnsResult.error) {
-        logger.warn('dns.failed', { domain: name, error: dnsResult.error.message });
-        finalError = dnsResult.error;
-      }
-    }
-
-    if (dnsResult && !dnsResult.error && dnsResult.availability === 'unavailable') {
-      const result: DomainStatus = {
-        domain: name,
-        availability: dnsResult.availability,
-        resolver: dnsResult.source,
-        raw,
-        error: undefined,
-      };
-      logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
-      return result;
-    }
-
-    const rdapAdapter = tldAdapter?.rdap ?? rdap;
-    if (!opts.tldConfig?.skipRdap && adapterAllowed(rdapAdapter.namespace, opts)) {
-      const rdapRes = await rdapAdapter.check(parsed, {
-        tldConfig: opts.tldConfig,
-        cache: opts.cache,
+        });
       });
-      raw[rdapAdapter.namespace] = rdapRes.raw;
-      if (rdapRes.error) {
-        logger.warn('rdap.failed', { domain: name, error: rdapRes.error.message });
-        finalError = rdapRes.error;
-      } else {
-        const result: DomainStatus = {
-          domain: name,
-          availability: rdapRes.availability,
-          resolver: rdapRes.source,
-          raw,
-          error: undefined,
-        };
-        logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
-        return result;
-      }
-    }
+    running.push(p);
+  };
 
-    if (adapterAllowed(altStatus.namespace, opts)) {
-      const statusRes = await altStatus.check(parsed, { cache: opts.cache });
-      raw[altStatus.namespace] = statusRes.raw;
-      if (statusRes.error) {
-        logger.warn('altstatus.failed', { domain: name, error: statusRes.error.message });
-        finalError = statusRes.error;
-      } else {
-        const result: DomainStatus = {
-          domain: name,
-          availability: statusRes.availability,
-          resolver: statusRes.source,
-          raw,
-          error: undefined,
-        };
-        logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
-        return result;
-      }
-    }
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const getTimeout = (ns: AdapterSource) => opts.timeoutConfig?.[ns] ?? 200;
 
-    let whoisRes: AdapterResponse | null = null;
-    const whoisAdapter = tldAdapter?.whois ?? (isNode ? whoisLib : whoisApi);
-    if (adapterAllowed(whoisAdapter.namespace, opts)) {
-      whoisRes = await whoisAdapter.check(parsed, { cache: opts.cache });
-      raw[whoisAdapter.namespace] = whoisRes.raw;
-      if (whoisRes.error) {
-        logger.warn(
-          tldAdapter?.whois ? 'whois.tld.failed' : isNode ? 'whois.lib.failed' : 'whois.api.failed',
-          { domain: name, error: whoisRes.error.message }
-        );
-        finalError = whoisRes.error;
-      } else {
-        const result: DomainStatus = {
-          domain: name,
-          availability: whoisRes.availability,
-          resolver: whoisRes.source,
-          raw,
-          error: undefined,
-        };
-        logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
-        return result;
-      }
-    }
-
-    const result: DomainStatus = {
-      domain: name,
-      availability: 'unknown',
-      resolver: 'app',
-      raw,
-      error: finalError,
-    };
-    logger.info('domain.check.end', { domain: name, status: result.availability, resolver: result.resolver });
-    return result;
-  } finally {
-    // nothing to cleanup
+  const sequence: Array<{ adapter: any; options: any }> = [];
+  const usePing =
+    opts.only?.some((p) => p.startsWith('dns.ping')) ||
+    opts.skip?.some((p) => p.startsWith('dns.host'));
+  const dnsAdapter = tldAdapter?.dns ?? (isNode ? (usePing ? ping : host) : doh);
+  if (adapterAllowed(dnsAdapter.namespace, opts)) {
+    sequence.push({ adapter: dnsAdapter, options: { cache: opts.cache, signal } });
   }
+  const rdapAdapter = tldAdapter?.rdap ?? rdap;
+  if (!opts.tldConfig?.skipRdap && adapterAllowed(rdapAdapter.namespace, opts)) {
+    sequence.push({ adapter: rdapAdapter, options: { tldConfig: opts.tldConfig, cache: opts.cache, signal } });
+  }
+  if (adapterAllowed(altStatus.namespace, opts)) {
+    sequence.push({ adapter: altStatus, options: { cache: opts.cache, signal } });
+  }
+  const whoisAdapter = tldAdapter?.whois ?? (isNode ? whoisLib : whoisApi);
+  if (adapterAllowed(whoisAdapter.namespace, opts)) {
+    sequence.push({ adapter: whoisAdapter, options: { cache: opts.cache, signal } });
+  }
+
+  for (const item of sequence) {
+    if (signal.aborted) break;
+    launch(item.adapter, item.options);
+    await Promise.race([sleep(getTimeout(item.adapter.namespace as AdapterSource)), done]);
+  }
+
+  if (!signal.aborted) {
+    await Promise.all(running);
+  }
+
+  const finalResult = result ?? {
+    domain: name,
+    availability: 'unknown',
+    resolver: 'app',
+    raw,
+    error: finalError,
+  };
+  logger.info('domain.check.end', {
+    domain: name,
+    status: finalResult.availability,
+    resolver: finalResult.resolver,
+  });
+  return finalResult;
 }
 
 export async function checkParallel(

@@ -2,17 +2,25 @@ import { AdapterResponse, ParsedDomain } from '../types';
 import whois from 'whois';
 import { BaseCheckerAdapter } from './baseAdapter';
 
-const DEFAULT_TIMEOUT_MS = 5000;
-
-function lookup(domain: string, timeoutMs: number): Promise<string> {
+function lookup(domain: string, signal?: AbortSignal): Promise<string> {
   return new Promise((resolve, reject) => {
-    whois.lookup(domain, { timeout: timeoutMs }, (err: any, data: string) => {
+    const req: any = whois.lookup(domain, {}, (err: any, data: string) => {
       if (err) {
         reject(err);
       } else {
         resolve(data);
       }
     });
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        try {
+          req?.abort?.();
+        } catch {
+          // ignore
+        }
+        reject(new DOMException('Aborted', 'AbortError'));
+      });
+    }
   });
 }
 
@@ -22,20 +30,11 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
   }
   protected async doCheck(
     domainObj: ParsedDomain,
-      opts: { timeoutMs?: number; signal?: AbortSignal } = {},
+    opts: { signal?: AbortSignal } = {},
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
-    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-      try {
-        const lookupPromise = lookup(domain, timeoutMs);
-        const stdout = opts.signal
-          ? await Promise.race([
-              lookupPromise,
-              new Promise<string>((_, reject) =>
-                opts.signal!.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
-              ),
-            ])
-          : await lookupPromise;
+    try {
+      const stdout = await lookup(domain, opts.signal);
       const text = stdout.toLowerCase();
       if (text.includes(`tld is not supported`)) {
         return {
@@ -65,9 +64,9 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
         source: 'whois.lib',
         raw: stdout,
       };
-      } catch (err: any) {
-        const isTimeout =
-          err?.name === 'AbortError' || err?.code === 'ETIMEDOUT' || /timed out/i.test(String(err?.message));
+    } catch (err: any) {
+      const isTimeout =
+        err?.name === 'AbortError' || err?.code === 'ETIMEDOUT' || /timed out/i.test(String(err?.message));
       return {
         domain,
         availability: 'unknown',
@@ -75,9 +74,7 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
         raw: null,
         error: {
           code: isTimeout ? 'TIMEOUT' : err.code || 'WHOIS_LIB_ERROR',
-          message: isTimeout
-            ? `Timed out after ${timeoutMs}ms`
-            : err.message || String(err),
+          message: err.message || String(err),
           retryable: true,
         },
       };

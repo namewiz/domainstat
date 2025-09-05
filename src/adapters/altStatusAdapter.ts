@@ -1,8 +1,6 @@
 import { AdapterResponse, ParsedDomain } from '../types';
 import { BaseCheckerAdapter } from './baseAdapter';
 
-const DEFAULT_TIMEOUT_MS = 2000;
-
 export class AltStatusAdapter extends BaseCheckerAdapter {
   private domainrKey?: string;
   constructor(domainrKey?: string) {
@@ -10,13 +8,10 @@ export class AltStatusAdapter extends BaseCheckerAdapter {
     this.domainrKey = domainrKey;
   }
 
-    private async fetchDomainr(domain: string, timeoutMs: number, signal?: AbortSignal): Promise<any> {
+  private async fetchDomainr(domain: string, signal?: AbortSignal): Promise<any> {
     if (!this.domainrKey) throw new Error('domainr api key missing');
     const url = `https://domainr.p.rapidapi.com/v2/status?domain=${domain}&mashape-key=${this.domainrKey}`;
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), timeoutMs);
-      const res = await fetch(url, { signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal });
-    clearTimeout(timer);
+    const res = await fetch(url, { signal });
     const text = await res.text();
     if (!res.ok) {
       const err: any = new Error(`domainr failed: ${res.status}`);
@@ -26,12 +21,9 @@ export class AltStatusAdapter extends BaseCheckerAdapter {
     return JSON.parse(text);
   }
 
-    private async fetchMono(domain: string, timeoutMs: number, signal?: AbortSignal): Promise<any> {
+  private async fetchMono(domain: string, signal?: AbortSignal): Promise<any> {
     const url = `https://api.mono.domains/availability/${domain}`;
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), timeoutMs);
-      const res = await fetch(url, { signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal });
-    clearTimeout(timer);
+    const res = await fetch(url, { signal });
     const text = await res.text();
     if (!res.ok) throw new Error(`mono domains failed: ${res.status}`);
     return JSON.parse(text);
@@ -39,14 +31,13 @@ export class AltStatusAdapter extends BaseCheckerAdapter {
 
   protected async doCheck(
     domainObj: ParsedDomain,
-      opts: { timeoutMs?: number; signal?: AbortSignal } = {},
+    opts: { signal?: AbortSignal } = {},
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
-    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {
       if (this.domainrKey) {
         try {
-          const data = await this.fetchDomainr(domain, timeoutMs, opts.signal);
+          const data = await this.fetchDomainr(domain, opts.signal);
           const summary = data?.status?.[0]?.summary;
           const isAvailable = summary === 'inactive';
           return {
@@ -59,7 +50,7 @@ export class AltStatusAdapter extends BaseCheckerAdapter {
           // fallthrough to mono
         }
       }
-        const monoData = await this.fetchMono(domain, timeoutMs, opts.signal);
+      const monoData = await this.fetchMono(domain, opts.signal);
       if (!monoData?.success) {
         throw new Error('mono domains failed');
       }

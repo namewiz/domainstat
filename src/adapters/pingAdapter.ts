@@ -4,7 +4,6 @@ import { promisify } from 'util';
 import { BaseCheckerAdapter } from './baseAdapter';
 
 const execAsync = promisify(exec);
-const DEFAULT_TIMEOUT_MS = 1000;
 
 // Do not use this adapter except for liveness checks.
 // Host is superior in speed, reliability and coverage.
@@ -16,13 +15,12 @@ export class PingAdapter extends BaseCheckerAdapter {
 
   protected async doCheck(
     domainObj: ParsedDomain,
-      opts: { timeoutMs?: number; signal?: AbortSignal } = {},
+    opts: { signal?: AbortSignal } = {},
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
-    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const cmd = `ping -c 1 ${domain}`;
-      try {
-        const { stdout, stderr } = await execAsync(cmd, { timeout: timeoutMs, signal: opts.signal });
+    try {
+      const { stdout, stderr } = await execAsync(cmd, { signal: opts.signal });
       return {
         domain,
         availability: 'unavailable',
@@ -30,17 +28,17 @@ export class PingAdapter extends BaseCheckerAdapter {
         raw: stdout || stderr,
       };
     } catch (err: any) {
-        const stderr: string = err?.stderr || '';
-        if (stderr.includes('Name or service not known') || stderr.includes('unknown host')) {
-          return {
-            domain,
-            availability: 'available',
-            source: 'dns.ping',
-            raw: false,
-          };
-        }
-        const isTimeout =
-          err?.name === 'AbortError' || (err.killed && err.signal === 'SIGTERM' && err.code === null);
+      // const stderr: string = err?.stderr || '';
+      // if (stderr.includes('Name or service not known') || stderr.includes('unknown host')) {
+      //   return {
+      //     domain,
+      //     availability: 'available',
+      //     source: 'dns.ping',
+      //     raw: false,
+      //   };
+      // }
+      const isTimeout =
+        err?.name === 'AbortError' || (err.killed && err.signal === 'SIGTERM' && err.code === null);
       return {
         domain,
         availability: 'unknown',
@@ -48,9 +46,7 @@ export class PingAdapter extends BaseCheckerAdapter {
         raw: null,
         error: {
           code: isTimeout ? 'TIMEOUT' : err.code || 'PING_ERROR',
-          message: isTimeout
-            ? `Timed out after ${timeoutMs}ms`
-            : err.message || String(err),
+          message: err.message || String(err),
           retryable: true,
         },
       };
