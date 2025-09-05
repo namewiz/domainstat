@@ -12,15 +12,17 @@ export class RdapAdapter extends BaseCheckerAdapter {
 
   protected async doCheck(
     domainObj: ParsedDomain,
-    opts: { timeoutMs?: number; tldConfig?: TldConfigEntry } = {}
+    opts: { timeoutMs?: number; tldConfig?: TldConfigEntry; signal?: AbortSignal } = {}
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    const baseUrl = opts.tldConfig?.rdapServer || this.baseUrl;
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), timeoutMs);
-    try {
-      const res = await fetch(`${baseUrl}${domain}`, { signal: ac.signal });
+      const baseUrl = opts.tldConfig?.rdapServer || this.baseUrl;
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), timeoutMs);
+      try {
+        const res = await fetch(`${baseUrl}${domain}`, {
+          signal: opts.signal ? AbortSignal.any([opts.signal, ac.signal]) : ac.signal,
+        });
       const text = await res.text();
       if (res.status === 404) {
         return {

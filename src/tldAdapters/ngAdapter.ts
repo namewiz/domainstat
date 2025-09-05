@@ -11,16 +11,20 @@ export class NgAdapter extends BaseCheckerAdapter {
     this.source = source;
   }
 
-  private async query(domain: string, timeoutMs: number): Promise<{ exists: boolean; raw: any }> {
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), timeoutMs);
+    private async query(
+      domain: string,
+      timeoutMs: number,
+      signal?: AbortSignal,
+    ): Promise<{ exists: boolean; raw: any }> {
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), timeoutMs);
     // This bypasses secure connection, their cert is expired.
     // (TLS checks must be disabled externally if required)
     try {
-      const res = await fetch(
-        `https://whois.nic.net.ng/domains?name=${domain}&exactMatch=true`,
-        { signal: ac.signal }
-      );
+        const res = await fetch(
+          `https://whois.nic.net.ng/domains?name=${domain}&exactMatch=true`,
+          { signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal }
+        );
       const data = await res.json();
       const exists = Array.isArray(data.domainSearchResults) && data.domainSearchResults.length > 0;
       return { exists, raw: data };
@@ -31,13 +35,13 @@ export class NgAdapter extends BaseCheckerAdapter {
 
   protected async doCheck(
     domainObj: ParsedDomain,
-    opts: { timeoutMs?: number } = {}
+      opts: { timeoutMs?: number; signal?: AbortSignal } = {}
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
     try {
-      const { exists, raw } = await this.query(domain, timeoutMs);
+        const { exists, raw } = await this.query(domain, timeoutMs, opts.signal);
       return {
         domain,
         availability: exists ? 'unavailable' : 'available',
@@ -45,7 +49,10 @@ export class NgAdapter extends BaseCheckerAdapter {
         raw,
       };
     } catch (err: any) {
-      const isTimeout = err?.code === 'ETIMEDOUT' || /timed out/i.test(String(err?.message));
+        const isTimeout =
+          err?.name === 'AbortError' ||
+          err?.code === 'ETIMEDOUT' ||
+          /timed out/i.test(String(err?.message));
       return {
         domain,
         availability: 'unknown',

@@ -12,12 +12,12 @@ export class WhoisApiAdapter extends BaseCheckerAdapter {
     this.xmlKey = xmlKey;
   }
 
-  private async fetchFreaks(domain: string, timeoutMs: number): Promise<any> {
+    private async fetchFreaks(domain: string, timeoutMs: number, signal?: AbortSignal): Promise<any> {
     if (!this.freaksKey) throw new Error('whoisfreaks api key missing');
     const url = `https://api.whoisfreaks.com/v1.0/whois?apiKey=${this.freaksKey}&whois=live&domain=${domain}`;
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), timeoutMs);
-    const res = await fetch(url, { signal: ac.signal });
+      const res = await fetch(url, { signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal });
     clearTimeout(timer);
     const text = await res.text();
     if (!res.ok) {
@@ -28,12 +28,12 @@ export class WhoisApiAdapter extends BaseCheckerAdapter {
     return JSON.parse(text);
   }
 
-  private async fetchXml(domain: string, timeoutMs: number): Promise<any> {
+    private async fetchXml(domain: string, timeoutMs: number, signal?: AbortSignal): Promise<any> {
     if (!this.xmlKey) throw new Error('whoisxml api key missing');
     const url = `https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${this.xmlKey}&domainName=${domain}&outputFormat=JSON`;
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), timeoutMs);
-    const res = await fetch(url, { signal: ac.signal });
+      const res = await fetch(url, { signal: signal ? AbortSignal.any([signal, ac.signal]) : ac.signal });
     clearTimeout(timer);
     const text = await res.text();
     if (!res.ok) throw new Error(`whoisxml failed: ${res.status}`);
@@ -42,17 +42,17 @@ export class WhoisApiAdapter extends BaseCheckerAdapter {
 
   protected async doCheck(
     domainObj: ParsedDomain,
-    opts: { timeoutMs?: number } = {},
+      opts: { timeoutMs?: number; signal?: AbortSignal } = {},
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     try {
       let data: any;
-      try {
-        data = await this.fetchFreaks(domain, timeoutMs);
+        try {
+          data = await this.fetchFreaks(domain, timeoutMs, opts.signal);
       } catch (err: any) {
         if (err.quota) {
-          data = await this.fetchXml(domain, timeoutMs);
+            data = await this.fetchXml(domain, timeoutMs, opts.signal);
         } else {
           throw err;
         }

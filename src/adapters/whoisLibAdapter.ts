@@ -22,12 +22,20 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
   }
   protected async doCheck(
     domainObj: ParsedDomain,
-    opts: { timeoutMs?: number } = {},
+      opts: { timeoutMs?: number; signal?: AbortSignal } = {},
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    try {
-      const stdout = await lookup(domain, timeoutMs);
+      try {
+        const lookupPromise = lookup(domain, timeoutMs);
+        const stdout = opts.signal
+          ? await Promise.race([
+              lookupPromise,
+              new Promise<string>((_, reject) =>
+                opts.signal!.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+              ),
+            ])
+          : await lookupPromise;
       const text = stdout.toLowerCase();
       if (text.includes(`tld is not supported`)) {
         return {
@@ -57,8 +65,9 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
         source: 'whois.lib',
         raw: stdout,
       };
-    } catch (err: any) {
-      const isTimeout = err?.code === 'ETIMEDOUT' || /timed out/i.test(String(err?.message));
+      } catch (err: any) {
+        const isTimeout =
+          err?.name === 'AbortError' || err?.code === 'ETIMEDOUT' || /timed out/i.test(String(err?.message));
       return {
         domain,
         availability: 'unknown',

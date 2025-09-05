@@ -33,6 +33,8 @@ import {
   check,
   checkBatch,
   checkBatchStream,
+  checkSerial,
+  checkParallel,
   type DomainStatus,
 } from 'fast-domain-status';
 
@@ -47,6 +49,9 @@ const streamed: DomainStatus[] = [];
 for await (const item of checkBatchStream(['foo.dev', 'bar.io'])) {
   streamed.push(item);
 }
+
+// Run all adapters in parallel using burst mode
+const fast = await check('example.com', { burstMode: true });
 ```
 
 Both batch helpers produce arrays of `DomainStatus`; `checkBatch` waits for all results,
@@ -71,6 +76,12 @@ result and `raw` contains the raw responses from each adapter.
 ### `check(domain, options?)`
 Checks a single domain and resolves to a `DomainStatus` object.
 
+### `checkSerial(domain, options?)`
+Sequential version of `check` that invokes adapters one after another.
+
+### `checkParallel(domain, options?)`
+Runs all adapters concurrently and aborts pending ones once a result is found.
+
 ### `checkBatch(domains, options?)`
 Checks multiple domains concurrently and resolves to an array of
 `DomainStatus` objects.
@@ -92,6 +103,7 @@ finishes.
 | platform? | `'auto' \| 'node' \| 'browser'` | Force runtime platform. |
 | cache? | `boolean` | Enable or disable caching (default `true`). |
 | apiKeys? | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services. |
+| burstMode? | `boolean` | When true, use `checkParallel` to query all adapters simultaneously. |
 
 Logging is disabled unless `verbose` is set. When `platform` is `auto` the
 library detects the runtime and chooses suitable adapters. Set `cache: false`

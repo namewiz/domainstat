@@ -71,7 +71,7 @@ export interface CheckerAdapter {
   namespace: string;
   check(
     domainObj: ParsedDomain,
-    opts?: { timeoutMs?: number; tldConfig?: TldConfigEntry; cache?: boolean }
+    opts?: { timeoutMs?: number; tldConfig?: TldConfigEntry; cache?: boolean; signal?: AbortSignal }
   ): Promise<AdapterResponse>;
 }
 
@@ -105,4 +105,6 @@ export interface CheckOptions {
     whoisfreaks?: string;
     whoisxml?: string;
   };
+  /** When true, run adapters in parallel */
+  burstMode?: boolean;
 }

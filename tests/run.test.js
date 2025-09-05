@@ -1,5 +1,5 @@
 import test from 'ava';
-import { checkBatchStream, checkBatch } from '../dist/index.js';
+import { checkBatchStream, checkBatch, check } from '../dist/index.js';
 import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
 import supportedTlDs from '../src/tlds.json' with { type: 'json' };
 
@@ -251,6 +251,19 @@ test.serial('each adapter sets raw field', async (t) => {
     const [result] = await checkBatch(['example.com'], { only: [ns], ...opts });
     t.true(Object.prototype.hasOwnProperty.call(result.raw, ns), `${ns} should set raw field`);
   }
+});
+
+test.serial('burstMode available domain', async t => {
+  const res = await check('this-domain-should-not-exist-12345.com', {
+    burstMode: true,
+    skip: ['whois.api'],
+  });
+  t.is(res.availability, 'available');
+});
+
+test.serial('burstMode unavailable domain', async t => {
+  const res = await check('google.com', { burstMode: true, skip: ['whois.api'] });
+  t.is(res.availability, 'unavailable');
 });
 
 function printSummary() {

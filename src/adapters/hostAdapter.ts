@@ -10,15 +10,22 @@ export class HostAdapter extends BaseCheckerAdapter {
   }
   protected async doCheck(
     domainObj: ParsedDomain,
-    opts: { timeoutMs?: number } = {},
+      opts: { timeoutMs?: number; signal?: AbortSignal } = {},
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    const timer = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), timeoutMs)
-    );
-    try {
-      const raw = await Promise.race([dns.resolve(domain, 'A'), timer]);
+      const timer = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), timeoutMs)
+      );
+      const abortPromise =
+        opts.signal &&
+        new Promise((_, reject) =>
+          opts.signal!.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+        );
+      try {
+        const raw = await Promise.race(
+          abortPromise ? [dns.resolve(domain, 'A'), timer, abortPromise] : [dns.resolve(domain, 'A'), timer]
+        );
       return {
         domain,
         availability: 'unavailable',
@@ -45,8 +52,10 @@ export class HostAdapter extends BaseCheckerAdapter {
       //   };
       // }
 
-      const isTimeout =
-        err?.message === 'timeout' || (err.killed && err.signal === 'SIGTERM' && err.code === null);
+        const isTimeout =
+          err?.name === 'AbortError' ||
+          err?.message === 'timeout' ||
+          (err.killed && err.signal === 'SIGTERM' && err.code === null);
       return {
         domain,
         availability: 'unknown',

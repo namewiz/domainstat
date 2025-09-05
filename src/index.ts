@@ -51,7 +51,7 @@ function normalizeDomains(domains: string[]): string[] {
   return Array.from(new Set(domains.map((d) => d.trim().toLowerCase())));
 }
 
-export async function check(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
+export async function checkSerial(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
   const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose
     ? opts.logger ?? console
     : noopLogger;
@@ -201,6 +201,123 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
   } finally {
     // nothing to cleanup
   }
+}
+
+export async function checkParallel(
+  domain: string,
+  opts: CheckOptions = {},
+): Promise<DomainStatus> {
+  const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose
+    ? opts.logger ?? console
+    : noopLogger;
+  logger.info('domain.check.start', { domain });
+  const raw: Record<string, any> = {};
+  const platform = opts.platform ?? Platform.AUTO;
+  const isNode = platform === Platform.AUTO ? detectNode() : platform === Platform.NODE;
+  const parsed = parse(domain.trim().toLowerCase());
+  const validated = validateDomain(parsed, domain);
+  if (validated.error) {
+    logger.error(`validation error for domain '${domain}', error: ${validated.error.message}`);
+    logger.info('domain.check.end', {
+      domain: validated.domain,
+      status: validated.availability,
+      resolver: 'validator',
+      error: validated.error.message,
+    });
+    return validated;
+  }
+  const name = parsed.domain!;
+  const tldAdapter = getTldAdapter(parsed.publicSuffix);
+
+  const altStatus = new AltStatusAdapter(opts.apiKeys?.domainr);
+  const whoisApi = new WhoisApiAdapter(
+    opts.apiKeys?.whoisfreaks,
+    opts.apiKeys?.whoisxml,
+  );
+
+  const controller = new AbortController();
+  const signal = controller.signal;
+
+  return await new Promise<DomainStatus>((resolve) => {
+    let finalError: AdapterError | undefined;
+    let pending = 0;
+
+    const finish = (result: DomainStatus) => {
+      logger.info('domain.check.end', {
+        domain: name,
+        status: result.availability,
+        resolver: result.resolver,
+      });
+      resolve(result);
+    };
+
+    const handleResponse = (res: AdapterResponse) => {
+      raw[res.source] = res.raw;
+      if (!controller.signal.aborted && !res.error && res.availability !== 'unknown') {
+        controller.abort();
+        finish({ domain: name, availability: res.availability, resolver: res.source, raw, error: undefined });
+        return;
+      }
+      if (res.error) {
+        logger.warn(`${res.source}.failed`, { domain: name, error: res.error.message });
+        finalError = res.error;
+      }
+      pending--;
+      if (pending === 0 && !controller.signal.aborted) {
+        finish({ domain: name, availability: 'unknown', resolver: 'app', raw, error: finalError });
+      }
+    };
+
+    const launch = (adapter: any, options: any) => {
+      pending++;
+      adapter
+        .check(parsed, options)
+        .then(handleResponse)
+        .catch((err: any) => {
+          handleResponse({
+            domain: name,
+            availability: 'unknown',
+            source: adapter.namespace,
+            raw: null,
+            error: {
+              code: err?.code || 'ADAPTER_ERROR',
+              message: err?.message || String(err),
+              retryable: true,
+            },
+          });
+        });
+    };
+
+    const usePing =
+      opts.only?.some((p) => p.startsWith('dns.ping')) ||
+      opts.skip?.some((p) => p.startsWith('dns.host'));
+    const dnsAdapter = tldAdapter?.dns ?? (isNode ? (usePing ? ping : host) : doh);
+    if (adapterAllowed(dnsAdapter.namespace, opts)) {
+      launch(dnsAdapter, { cache: opts.cache, signal });
+    }
+
+    const rdapAdapter = tldAdapter?.rdap ?? rdap;
+    if (!opts.tldConfig?.skipRdap && adapterAllowed(rdapAdapter.namespace, opts)) {
+      launch(rdapAdapter, { tldConfig: opts.tldConfig, cache: opts.cache, signal });
+    }
+
+    if (adapterAllowed(altStatus.namespace, opts)) {
+      launch(altStatus, { cache: opts.cache, signal });
+    }
+
+    const whoisAdapter = tldAdapter?.whois ?? (isNode ? whoisLib : whoisApi);
+    if (adapterAllowed(whoisAdapter.namespace, opts)) {
+      launch(whoisAdapter, { cache: opts.cache, signal });
+    }
+
+    if (pending === 0) {
+      finish({ domain: name, availability: 'unknown', resolver: 'app', raw, error: finalError });
+    }
+  });
+}
+
+export async function check(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
+  return opts.burstMode ? checkParallel(domain, opts) : checkSerial(domain, opts);
 }
 
 export async function* checkBatchStream(

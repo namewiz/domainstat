@@ -15,18 +15,18 @@ export class DohAdapter extends BaseCheckerAdapter {
 
   protected async doCheck(
     domainObj: ParsedDomain,
-    opts: { timeoutMs?: number } = {},
+      opts: { timeoutMs?: number; signal?: AbortSignal } = {},
   ): Promise<AdapterResponse> {
     const domain = domainObj.domain as string;
     const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), timeoutMs);
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), timeoutMs);
     try {
       const params = new URLSearchParams({ name: domain, type: 'A' });
-      const res = await fetch(`${this.url}?${params.toString()}`, {
-        headers: { accept: 'application/dns-json' },
-        signal: ac.signal,
-      });
+        const res = await fetch(`${this.url}?${params.toString()}`, {
+          headers: { accept: 'application/dns-json' },
+          signal: opts.signal ? AbortSignal.any([opts.signal, ac.signal]) : ac.signal,
+        });
       if (!res.ok) {
         const retryable = res.status === 429 || res.status >= 500;
         return {
