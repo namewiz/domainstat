@@ -1,6 +1,6 @@
 {
-  "name": "fast-domain-status",
-  "version": "0.1.5",
+  "name": "domainstat",
+  "version": "1.0.0",
   "description": "Extremely fast domain status checker library using DoH, RDAP and WHOIS API.",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,10 +15,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/justiceo/fast-domain-status.git"
+    "url": "git+https://github.com/namewiz/domainstat.git"
   },
   "bugs": {
-    "url": "https://github.com/justiceo/fast-domain-status/issues"
+    "url": "https://github.com/namewiz/domainstat/issues"
   },
   "author": "Justice Ogbonna",
   "keywords": [],
