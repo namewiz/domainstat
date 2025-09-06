@@ -22,7 +22,7 @@ export class RdapAdapter extends BaseCheckerAdapter {
       if (res.status === 404) {
         return {
           domain,
-          availability: 'available',
+          availability: 'unregistered',
           source: 'rdap',
           raw: null,
         };
@@ -44,7 +44,7 @@ export class RdapAdapter extends BaseCheckerAdapter {
       const data = JSON.parse(text);
       return {
         domain,
-        availability: 'unavailable',
+        availability: 'registered',
         source: 'rdap',
         raw: data,
       };

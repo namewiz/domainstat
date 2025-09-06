@@ -36,10 +36,10 @@ export class AltStatusAdapter extends BaseCheckerAdapter {
         try {
           const data = await this.fetchDomainr(domain, opts.signal);
           const summary = data?.status?.[0]?.summary;
-          const isAvailable = summary === 'inactive';
+          const isUnregistered = summary === 'inactive';
           return {
             domain,
-            availability: isAvailable ? 'available' : 'unavailable',
+            availability: isUnregistered ? 'unregistered' : 'registered',
             source: 'altstatus.domainr',
             raw: data,
           };
@@ -53,7 +53,7 @@ export class AltStatusAdapter extends BaseCheckerAdapter {
       }
       return {
         domain,
-        availability: monoData.isDomainAvailable ? 'available' : 'unavailable',
+        availability: monoData.isDomainAvailable ? 'unregistered' : 'registered',
         source: 'altstatus.mono',
         raw: monoData,
       };

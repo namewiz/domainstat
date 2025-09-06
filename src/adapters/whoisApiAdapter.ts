@@ -47,10 +47,10 @@ export class WhoisApiAdapter extends BaseCheckerAdapter {
       }
 
       const text = JSON.stringify(data).toLowerCase();
-      const isAvailable = text.includes('n/a') || text.includes('no match') || text.includes('not found');
+      const isUnregistered = text.includes('n/a') || text.includes('no match') || text.includes('not found');
       return {
         domain,
-        availability: isAvailable ? 'available' : 'unavailable',
+        availability: isUnregistered ? 'unregistered' : 'registered',
         source: 'whois.api',
         raw: data,
       };

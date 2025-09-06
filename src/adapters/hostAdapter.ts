@@ -19,7 +19,7 @@ export class HostAdapter extends BaseCheckerAdapter {
         : dns.resolve(domain, 'A'));
       return {
         domain,
-        availability: 'unavailable',
+        availability: 'registered',
         source: 'dns.host',
         raw,
       };
@@ -27,17 +27,17 @@ export class HostAdapter extends BaseCheckerAdapter {
       // if (err.code === 'ENODATA' || err.code === 'ENOTFOUND') {
       //   return {
       //     domain,
-      //     availability: 'available',
+      //     availability: 'unregistered',
       //     source: 'dns.host',
       //     raw: false,
       //   };
       // }
       // TODO: This is only the case for some TLDs, limit to TLDs.
-      // E.g. for .lc, timeout => available.
+      // E.g. for .lc, timeout => unregistered.
       // if(err.code === 'ESERVFAIL' || err.code === 'ETIMEOUT') {
       //   return {
       //     domain,
-      //     availability: 'unavailable',
+      //     availability: 'registered',
       //     source: 'dns.host',
       //     raw: false,
       //   };

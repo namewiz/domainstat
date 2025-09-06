@@ -1,7 +1,7 @@
 # Fast Domain Status
 
 Fast Domain Status is a lightweight TypeScript/JavaScript library for checking
-whether domain names are available for registration. It queries several data
+whether domain names are unregistered (available to register). It queries several data
 sources in a "first good win" order – DNS, RDAP and finally WHOIS – and returns a
 uniform result describing the domain's status.
 
@@ -32,7 +32,7 @@ npm install fast-domain-status
 import { check, checkBatch, checkBatchStream, checkSerial, checkParallel, type DomainStatus } from 'fast-domain-status';
 
 const res = await check('example.com');
-// { domain: 'example.com', availability: 'unavailable', resolver: 'dns.host', raw: {...} }
+// { domain: 'example.com', availability: 'registered', resolver: 'dns.host', raw: {...} }
 
 // checkBatch resolves to an array when all lookups finish
 const batch: DomainStatus[] = await checkBatch(['example.com', 'openai.org']);
@@ -50,7 +50,7 @@ const fast = await check('example.com', { burstMode: true });
 Both batch helpers produce arrays of `DomainStatus`; `checkBatch` waits for all results,
 while `checkBatchStream` yields items as they become available.
 
-The `availability` field can be `available`, `unavailable`, `unsupported`,
+The `availability` field can be `unregistered`, `registered`, `unsupported`,
 `invalid` or `unknown`. The `resolver` indicates which adapter produced the
 result and `raw` contains the raw responses from each adapter.
 
@@ -59,7 +59,7 @@ result and `raw` contains the raw responses from each adapter.
 | Field        | Type                                                                      | Description                                       |
 | ------------ | ------------------------------------------------------------------------- | ------------------------------------------------- |
 | domain       | `string`                                                                  | Domain that was checked.                          |
-| availability | `'available' \| 'unavailable' \| 'unsupported' \| 'invalid' \| 'unknown'` | Overall status of the domain.                     |
+| availability | `'unregistered' \| 'registered' \| 'unsupported' \| 'invalid' \| 'unknown'` | Overall status of the domain.                     |
 | resolver     | `string`                                                                  | Adapter namespace that produced the final result. |
 | raw          | `Record<string, any>`                                                     | Raw responses keyed by adapter namespace.         |
 | error?       | `{ code: string; message: string; retryable: boolean }`                   | Optional error details if lookup failed.          |

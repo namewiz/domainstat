@@ -1,6 +1,6 @@
 import type { ParseResult } from 'tldts';
 
-export type Availability = 'available' | 'unavailable' | 'unsupported' | 'invalid' | 'unknown';
+export type Availability = 'unregistered' | 'registered' | 'unsupported' | 'invalid' | 'unknown';
 
 export type AdapterSource =
   | 'validator'

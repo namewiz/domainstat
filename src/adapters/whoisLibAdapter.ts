@@ -46,7 +46,7 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
           },
         };
       }
-      const availablePatterns = [
+      const unregisteredPatterns = [
         'no match',
         'not found',
         'no object found',
@@ -54,10 +54,10 @@ export class WhoisLibAdapter extends BaseCheckerAdapter {
         'no entries found',
         'status: available',
       ];
-      const isAvailable = availablePatterns.some((p) => text.includes(p));
+      const isUnregistered = unregisteredPatterns.some((p) => text.includes(p));
       return {
         domain,
-        availability: isAvailable ? 'available' : 'unavailable',
+        availability: isUnregistered ? 'unregistered' : 'registered',
         source: 'whois.lib',
         raw: stdout,
       };

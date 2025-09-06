@@ -20,7 +20,7 @@ export class PingAdapter extends BaseCheckerAdapter {
       const { stdout, stderr } = await execAsync(cmd, { signal: opts.signal });
       return {
         domain,
-        availability: 'unavailable',
+        availability: 'registered',
         source: 'dns.ping',
         raw: stdout || stderr,
       };
@@ -29,7 +29,7 @@ export class PingAdapter extends BaseCheckerAdapter {
       // if (stderr.includes('Name or service not known') || stderr.includes('unknown host')) {
       //   return {
       //     domain,
-      //     availability: 'available',
+      //     availability: 'unregistered',
       //     source: 'dns.ping',
       //     raw: false,
       //   };

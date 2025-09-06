@@ -25,7 +25,7 @@ export class NgAdapter extends BaseCheckerAdapter {
       const { exists, raw } = await this.query(domain, opts.signal);
       return {
         domain,
-        availability: exists ? 'unavailable' : 'available',
+        availability: exists ? 'registered' : 'unregistered',
         source: this.namespace,
         raw,
       };

@@ -38,7 +38,7 @@ export class DohAdapter extends BaseCheckerAdapter {
       const unknown = answers.length === 0;
       return {
         domain,
-        availability: unknown ? 'unknown' : 'unavailable',
+        availability: unknown ? 'unknown' : 'registered',
         source: 'dns.doh',
         raw: data,
       };

@@ -1,6 +1,6 @@
 import test from 'ava';
 import { checkBatchStream, checkBatch, check } from '../dist/index.js';
-import unavailableDomainsJson from '../src/unavailable-domains.json' with { type: 'json' };
+import registeredDomainsJson from '../src/registered-domains.json' with { type: 'json' };
 import supportedTlDs from '../src/tlds.json' with { type: 'json' };
 
 const tldList = Object.keys({
@@ -10,23 +10,23 @@ const tldList = Object.keys({
   ...supportedTlDs.SLDs,
 });
 
-const unavailableMap = {
-  ...unavailableDomainsJson.popular,
-  ...unavailableDomainsJson.gTLDs,
-  ...unavailableDomainsJson.ccTLDs,
-  ...unavailableDomainsJson.SLDs,
+const registeredMap = {
+  ...registeredDomainsJson.popular,
+  ...registeredDomainsJson.gTLDs,
+  ...registeredDomainsJson.ccTLDs,
+  ...registeredDomainsJson.SLDs,
 };
 
-const unavailableDomains = tldList
-  .filter((tld) => unavailableMap[tld])
+const registeredDomains = tldList
+  .filter((tld) => registeredMap[tld])
   .map((tld) => ({
-    name: unavailableMap[tld],
-    availability: 'unavailable',
+    name: registeredMap[tld],
+    availability: 'registered',
   }));
 
-const availableDomains = tldList.map((tld) => ({
+const unregisteredDomains = tldList.map((tld) => ({
   name: `this-domain-should-not-exist-12345.${tld}`,
-  availability: 'available',
+  availability: 'unregistered',
 }));
 
 const unknownDomains = tldList.map((tld) => ({
@@ -119,10 +119,10 @@ test('dns.host unknown status tests', async (t) => {
   t.true(contradictions === 0);
 });
 
-test('dns.host unavailable status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['dns.host'] });
-  console.log(`dns.host unavailable domains test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsHostUnavailable = { pass, total, cutoff: 0.99, latencySum, latencyCount, contradictions };
+test('dns.host registered status tests', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['dns.host'] });
+  console.log(`dns.host registered domains test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.dnsHostRegistered = { pass, total, cutoff: 0.99, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
@@ -133,10 +133,10 @@ test('dns.doh unknown status tests', async (t) => {
   t.true(contradictions === 0);
 });
 
-test('dns.doh unavailable status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['dns.doh'], platform: 'browser' });
-  console.log(`dns.doh unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsDohUnavailable = { pass, total, cutoff: 0.98, latencySum, latencyCount, contradictions };
+test('dns.doh registered status tests', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['dns.doh'], platform: 'browser' });
+  console.log(`dns.doh registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.dnsDohRegistered = { pass, total, cutoff: 0.98, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
@@ -147,99 +147,99 @@ test('dns.ping unknown status tests', async (t) => {
   t.true(contradictions === 0);
 });
 
-test('dns.ping unavailable status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['dns.ping'] });
+test('dns.ping registered status tests', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['dns.ping'] });
   console.log(`dns.ping test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsPingUnavailable = { pass, total, cutoff: 0.7, latencySum, latencyCount, contradictions };
+  testSummary.dnsPingRegistered = { pass, total, cutoff: 0.7, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test('whois.lib available status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(availableDomains, { only: ['whois.lib'] });
-  console.log(`whois.lib available status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisLibAvailable = { pass, total, cutoff: 0.1, latencySum, latencyCount, contradictions };
+test('whois.lib unregistered status tests', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, { only: ['whois.lib'] });
+  console.log(`whois.lib unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.whoisLibUnregistered = { pass, total, cutoff: 0.1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test('whois.lib unavailable status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['whois.lib'] });
-  console.log(`whois.lib unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisLibUnavailable = { pass, total, cutoff: 0.1, latencySum, latencyCount, contradictions };
+test('whois.lib registered status tests', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['whois.lib'] });
+  console.log(`whois.lib registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.whoisLibRegistered = { pass, total, cutoff: 0.1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test.skip('whois.api available status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(availableDomains, { only: ['whois.api'] });
-  console.log(`whois.api available status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisApiAvailable = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
+test.skip('whois.api unregistered status tests', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, { only: ['whois.api'] });
+  console.log(`whois.api unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.whoisApiUnregistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test.skip('whois.api unavailable status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['whois.api'] });
-  console.log(`whois.api unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisApiUnavailable = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
+test.skip('whois.api registered status tests', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['whois.api'] });
+  console.log(`whois.api registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.whoisApiRegistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test('altstatus available status test', async (t) => {
+test('altstatus unregistered status test', async (t) => {
   const domains = [
-    { name: 'this-domain-should-not-exist-12345.com', availability: 'available' },
-    { name: 'this-domain-should-not-exist-12345.dev', availability: 'available' },
-    { name: 'this-domain-should-not-exist-12345.ng', availability: 'available' },
-    { name: 'this-domain-should-not-exist-12345.com.ng', availability: 'available' },
+    { name: 'this-domain-should-not-exist-12345.com', availability: 'unregistered' },
+    { name: 'this-domain-should-not-exist-12345.dev', availability: 'unregistered' },
+    { name: 'this-domain-should-not-exist-12345.ng', availability: 'unregistered' },
+    { name: 'this-domain-should-not-exist-12345.com.ng', availability: 'unregistered' },
   ];
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(domains, {
     only: ['altstatus'],
     apiKeys: { domainr: '7b6e2a71bcmshf310d57fbbe5248p135b4djsn3c1aa3c16ca3' },
   });
-  console.log(`altstatus available status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.altStatusAvailable = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
+  console.log(`altstatus unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.altStatusUnregistered = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test('altstatus unavailable status test', async (t) => {
+test('altstatus registered status test', async (t) => {
   const domains = [
-    { name: 'google.dev', availability: 'unavailable' },
-    { name: 'jiji.ng', availability: 'unavailable' },
-    { name: 'amazon.com', availability: 'unavailable' },
+    { name: 'google.dev', availability: 'registered' },
+    { name: 'jiji.ng', availability: 'registered' },
+    { name: 'amazon.com', availability: 'registered' },
   ];
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(domains, {
     only: ['altstatus'],
     apiKeys: { domainr: '7b6e2a71bcmshf310d57fbbe5248p135b4djsn3c1aa3c16ca3' },
   });
-  console.log(`altstatus unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.altStatusUnavailable = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
+  console.log(`altstatus registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.altStatusRegistered = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test('rdap available status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(availableDomains, { only: ['rdap'] });
-  console.log(`rdap available status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.rdapAvailable = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
+test('rdap unregistered status tests', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, { only: ['rdap'] });
+  console.log(`rdap unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.rdapUnregistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test('rdap unavailable status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['rdap'] });
-  console.log(`rdap unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.rdapUnavailable = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
+test('rdap registered status tests', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['rdap'] });
+  console.log(`rdap registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.rdapRegistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('.ng TLD tests', async (t) => {
   const ngTlds = tldList.filter((tld) => tld === 'ng' || tld.endsWith('.ng'));
-  const availableDomains = ngTlds.map((tld) => ({
+  const unregisteredDomains = ngTlds.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
-    availability: 'available',
+    availability: 'unregistered',
   }));
-  const unavailableDomains = ngTlds
-    .filter((tld) => unavailableMap[tld])
+  const registeredDomains = ngTlds
+    .filter((tld) => registeredMap[tld])
     .map((tld) => ({
-      name: unavailableMap[tld],
-      availability: 'unavailable',
+      name: registeredMap[tld],
+      availability: 'registered',
     }));
-  const domains = [...availableDomains, ...unavailableDomains];
+  const domains = [...unregisteredDomains, ...registeredDomains];
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(domains);
   console.log(`.ng test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.ng = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
@@ -248,17 +248,17 @@ test('.ng TLD tests', async (t) => {
 
 test('.ng TLD tests with rdap', async (t) => {
   const ngTlds = tldList.filter((tld) => tld === 'ng' || tld.endsWith('.ng'));
-  const availableDomains = ngTlds.map((tld) => ({
+  const unregisteredDomains = ngTlds.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
-    availability: 'available',
+    availability: 'unregistered',
   }));
-  const unavailableDomains = ngTlds
-    .filter((tld) => unavailableMap[tld])
+  const registeredDomains = ngTlds
+    .filter((tld) => registeredMap[tld])
     .map((tld) => ({
-      name: unavailableMap[tld],
-      availability: 'unavailable',
+      name: registeredMap[tld],
+      availability: 'registered',
     }));
-  const domains = [...availableDomains, ...unavailableDomains];
+  const domains = [...unregisteredDomains, ...registeredDomains];
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(domains, { only: ['rdap'] });
   console.log(`.ng test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.ngRdap = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
@@ -266,7 +266,7 @@ test('.ng TLD tests with rdap', async (t) => {
 });
 
 test('browser platform tests', async (t) => {
-  const domains = [...availableDomains, ...unavailableDomains];
+  const domains = [...unregisteredDomains, ...registeredDomains];
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(domains, { platform: 'browser' });
   console.log(`browser platform test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.browser = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
@@ -292,17 +292,17 @@ test('each adapter sets raw field', async (t) => {
   }
 });
 
-test('burstMode available domain', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(availableDomains, { burstMode: true, skip: ['whois.api'] });
-  console.log(`burstMode available test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.burstModeAvailable = { pass, total, cutoff: 0.95, latencySum, latencyCount, contradictions };
+test('burstMode unregistered domain', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, { burstMode: true, skip: ['whois.api'] });
+  console.log(`burstMode unregistered test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.burstModeUnregistered = { pass, total, cutoff: 0.95, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test('burstMode unavailable domain', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unavailableDomains, { burstMode: true, skip: ['whois.api'] });
-  console.log(`burstMode unavailable test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.burstModeUnavailable = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
+test('burstMode registered domain', async (t) => {
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { burstMode: true, skip: ['whois.api'] });
+  console.log(`burstMode registered test results: ${((pass * 100) / total).toFixed(2)}%`);
+  testSummary.burstModeRegistered = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
