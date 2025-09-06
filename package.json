@@ -1,6 +1,6 @@
 {
   "name": "domainstat",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Extremely fast domain status checker library using DoH, RDAP and WHOIS API.",
   "type": "module",
   "main": "./dist/index.js",
@@ -13,6 +13,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
+  "homepage": "https://github.com/namewiz/domainstat",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/namewiz/domainstat.git"
@@ -20,12 +21,12 @@
   "bugs": {
     "url": "https://github.com/namewiz/domainstat/issues"
   },
-  "author": "Justice Ogbonna",
-  "keywords": [],
+  "author": "Justice Ogbonna <dev@justiceo.com>",
+  "keywords": ["domain-name", "domain-status", "domain-availability", "rdap", "whois"],
   "exports": {
     ".": "./dist/index.js"
   },
-  "license": "ISC",
+  "license": "MIT",
   "engines": {
     "node": "^22.12.0",
     "npm": "^10.9.0"

@@ -1,6 +1,12 @@
-# Fast Domain Status
+# DomainStat
 
-Fast Domain Status is a lightweight TypeScript/JavaScript library for checking
+[![Build](https://github.com/namewiz/domainstat/actions/workflows/build.yml/badge.svg)](https://github.com/namewiz/domainstat/actions/workflows/build.yml) 
+[![Test](https://github.com/namewiz/domainstat/actions/workflows/test.yml/badge.svg)](https://github.com/namewiz/domainstat/actions/workflows/test.yml) 
+[![NPM](http://img.shields.io/npm/v/domainstat.svg)](https://www.npmjs.com/package/domainstat) 
+[![License](https://img.shields.io/npm/l/domainstat.svg)](https://github.com/namewiz/domainstat/blob/main/LICENSE)
+
+
+DomainStat is a lightweight TypeScript/JavaScript library for checking
 whether domain names are unregistered (available to register). It queries several data
 sources in a "first good win" order – DNS (DoH), RDAP and finally WHOIS API – and returns a
 uniform result describing the domain's status.
@@ -22,13 +28,13 @@ consistent behavior and simpler usage. The library runs with fetch-based adapter
 ## Installation
 
 ```bash
-npm install fast-domain-status
+npm install domainstat
 ```
 
 ## Quick Start
 
 ```ts
-import { check, checkBatch, checkBatchStream, checkSerial, checkParallel, type DomainStatus } from 'fast-domain-status';
+import { check, checkBatch, checkBatchStream, checkSerial, checkParallel, type DomainStatus } from 'domainstat';
 
 const res = await check('example.com');
 // { domain: 'example.com', availability: 'registered', resolver: 'dns.doh', raw: {...} }

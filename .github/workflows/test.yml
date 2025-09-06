@@ -1,18 +1,17 @@
-name: Node.js CI
-
+name: Test
 on:
   push:
-
+    branches: ["**"]
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 22
-          check-latest: true
-      - name: Use npm 10.x
-        run: npm i -g npm@^10
-      - run: npm ci
+          node-version: ${{ matrix.node-version }}
+      - run: npm install
       - run: npm test
