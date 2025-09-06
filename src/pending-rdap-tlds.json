@@ -1,0 +1,13 @@
+{
+  "popular": {
+    "gov": true,
+    "io": true,
+    "me": true,
+    "us": true
+  },
+  "ccTLDs": {
+    "ac": true,
+    "af": true,
+    "am": true
+  }
+}

@@ -113,70 +113,92 @@ test('validator tests', async (t) => {
 });
 
 test('dns.host unknown status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, { only: ['dns.host'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, {
+    only: ['dns.host'],
+  });
   console.log(`dns.host unknown status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsHostUnknown = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('dns.host registered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['dns.host'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
+    only: ['dns.host'],
+  });
   console.log(`dns.host registered domains test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsHostRegistered = { pass, total, cutoff: 0.99, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('dns.doh unknown status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, { only: ['dns.doh'], platform: 'browser' });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, {
+    only: ['dns.doh'],
+    platform: 'browser',
+  });
   console.log(`dns.doh unknown status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsDohUnknown = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('dns.doh registered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['dns.doh'], platform: 'browser' });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
+    only: ['dns.doh'],
+    platform: 'browser',
+  });
   console.log(`dns.doh registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsDohRegistered = { pass, total, cutoff: 0.98, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('dns.ping unknown status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, { only: ['dns.ping'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, {
+    only: ['dns.ping'],
+  });
   console.log(`dns.ping test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsPingUnknown = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('dns.ping registered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['dns.ping'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
+    only: ['dns.ping'],
+  });
   console.log(`dns.ping test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsPingRegistered = { pass, total, cutoff: 0.7, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('whois.lib unregistered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, { only: ['whois.lib'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, {
+    only: ['whois.lib'],
+  });
   console.log(`whois.lib unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisLibUnregistered = { pass, total, cutoff: 0.1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('whois.lib registered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['whois.lib'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
+    only: ['whois.lib'],
+  });
   console.log(`whois.lib registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisLibRegistered = { pass, total, cutoff: 0.1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test.skip('whois.api unregistered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, { only: ['whois.api'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, {
+    only: ['whois.api'],
+  });
   console.log(`whois.api unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisApiUnregistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test.skip('whois.api registered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['whois.api'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
+    only: ['whois.api'],
+  });
   console.log(`whois.api registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisApiRegistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
@@ -214,14 +236,18 @@ test('altstatus registered status test', async (t) => {
 });
 
 test('rdap unregistered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, { only: ['rdap'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, {
+    only: ['rdap'],
+  });
   console.log(`rdap unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.rdapUnregistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('rdap registered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { only: ['rdap'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
+    only: ['rdap'],
+  });
   console.log(`rdap registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.rdapRegistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
@@ -293,14 +319,20 @@ test('each adapter sets raw field', async (t) => {
 });
 
 test('burstMode unregistered domain', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, { burstMode: true, skip: ['whois.api'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, {
+    burstMode: true,
+    skip: ['whois.api'],
+  });
   console.log(`burstMode unregistered test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.burstModeUnregistered = { pass, total, cutoff: 0.95, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
 test('burstMode registered domain', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, { burstMode: true, skip: ['whois.api'] });
+  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
+    burstMode: true,
+    skip: ['whois.api'],
+  });
   console.log(`burstMode registered test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.burstModeRegistered = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
@@ -325,7 +357,9 @@ function printSummary() {
 
   // Report average latency per adapter request (ms) for each test in summary
   console.log('\nTest Summary:');
-  for (const [key, { pass, total, cutoff, latencySum, latencyCount, contradictions = 0 }] of Object.entries(testSummary)) {
+  for (const [key, { pass, total, cutoff, latencySum, latencyCount, contradictions = 0 }] of Object.entries(
+    testSummary,
+  )) {
     const ratio = `${pass}/${total}`;
     const percent = `${((pass / total) * 100).toFixed(2)}%`;
     const passed = pass / total >= cutoff;
@@ -333,7 +367,7 @@ function printSummary() {
     const color = passed && contradictions === 0 ? GREEN : RED;
     console.log(
       color +
-        `- ${key.padEnd(20)}${ratio.padEnd(10)}${percent.padStart(8)}  contradictions: ${String(contradictions).padStart(3)}  avg: ${avgLatency.padStart(9)}ms/req total: ${latencySum}ms` +
+        `- ${key.padEnd(25)}${ratio.padEnd(10)}${percent.padStart(8)}  contradictions: ${String(contradictions).padStart(3)}  avg: ${avgLatency.padStart(9)}ms/req total: ${latencySum}ms` +
         RESET,
     );
   }

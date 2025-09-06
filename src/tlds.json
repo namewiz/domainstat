@@ -7,10 +7,7 @@
     "club": true,
     "com": true,
     "dev": true,
-    "gov": true,
     "info": true,
-    "io": true,
-    "me": true,
     "name": true,
     "net": true,
     "online": true,
@@ -197,22 +194,17 @@
     "zone": true
   },
   "ccTLDs": {
-    "ac": true,
     "ad": true,
     "ae": true,
-    "af": true,
     "ag": true,
     "ai": true,
     "al": true,
-    "am": true,
     "ao": true,
     "aq": true,
     "ng": true,
-    "uk": true,
-    "us": true
+    "uk": true
   },
   "SLDs": {
-    "co.za": true,
     "com.bd": true,
     "com.ck": true,
     "com.ng": true,

@@ -56,13 +56,13 @@ result and `raw` contains the raw responses from each adapter.
 
 ### Response Schema
 
-| Field        | Type                                                                      | Description                                       |
-| ------------ | ------------------------------------------------------------------------- | ------------------------------------------------- |
-| domain       | `string`                                                                  | Domain that was checked.                          |
+| Field        | Type                                                                        | Description                                       |
+| ------------ | --------------------------------------------------------------------------- | ------------------------------------------------- |
+| domain       | `string`                                                                    | Domain that was checked.                          |
 | availability | `'unregistered' \| 'registered' \| 'unsupported' \| 'invalid' \| 'unknown'` | Overall status of the domain.                     |
-| resolver     | `string`                                                                  | Adapter namespace that produced the final result. |
-| raw          | `Record<string, any>`                                                     | Raw responses keyed by adapter namespace.         |
-| error?       | `{ code: string; message: string; retryable: boolean }`                   | Optional error details if lookup failed.          |
+| resolver     | `string`                                                                    | Adapter namespace that produced the final result. |
+| raw          | `Record<string, any>`                                                       | Raw responses keyed by adapter namespace.         |
+| error?       | `{ code: string; message: string; retryable: boolean }`                     | Optional error details if lookup failed.          |
 
 ## API
 
@@ -103,7 +103,7 @@ finishes.
 | apiKeys?         | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services.                                                           |
 | burstMode?       | `boolean`                                                       | When true, use `checkParallel` to query all adapters simultaneously.                         |
 | allottedLatency? | `Partial<Record<AdapterSource, number>>`                        | Per‑adapter latency before launching the next in serial mode; defaults to `200ms` per entry. |
-| timeoutConfig?   | `Partial<Record<AdapterSource, number>>`                        | Maximum execution time per adapter in milliseconds. |
+| timeoutConfig?   | `Partial<Record<AdapterSource, number>>`                        | Maximum execution time per adapter in milliseconds.                                          |
 
 Logging is disabled unless `verbose` is set. When `platform` is `auto` the
 library detects the runtime and chooses suitable adapters. Set `cache: false`

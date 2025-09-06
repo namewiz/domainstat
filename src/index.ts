@@ -238,7 +238,14 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
       latencies[res.source] = res.latency ?? 0;
       if (!controller.signal.aborted && !res.error && res.availability !== 'unknown') {
         controller.abort();
-        finish({ domain: name, availability: res.availability, resolver: res.source, raw, latencies, error: undefined });
+        finish({
+          domain: name,
+          availability: res.availability,
+          resolver: res.source,
+          raw,
+          latencies,
+          error: undefined,
+        });
         return;
       }
       if (res.error) {
