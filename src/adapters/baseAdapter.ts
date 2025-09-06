@@ -25,7 +25,9 @@ export abstract class BaseCheckerAdapter implements CheckerAdapter {
     }
 
     const { cache, ...rest } = opts;
+    const start = Date.now();
     const res = await this.doCheck(domainObj, rest);
+    res.latency = Date.now() - start;
     if (cacheEnabled && (!res.error || res.error.retryable === false)) {
       BaseCheckerAdapter.cache.set(key, res);
     }

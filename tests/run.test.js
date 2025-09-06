@@ -52,10 +52,11 @@ if (!(await hasNetwork())) {
 const testSummary = {};
 
 async function runTest(domains, opts = {}) {
-  const start = Date.now();
   const expectedMap = Object.fromEntries(domains.map((d) => [d.name, d.availability]));
   const uniqueNames = Array.from(new Set(Object.keys(expectedMap)));
   let pass = 0;
+  let latencySum = 0;
+  let latencyCount = 0;
   for await (const res of checkBatchStream(uniqueNames, opts)) {
     const expected = expectedMap[res.domain];
     const msg = `domain:${res.domain}, expected:${expected}, got:${res.availability}, resolver:${res.resolver}`;
@@ -66,9 +67,14 @@ async function runTest(domains, opts = {}) {
       const failMsg = `FAILED: ${msg}\n\t${res.error?.message ?? 'No error message provided'}`;
       console.error(`\x1b[31mError: ${failMsg}\x1b[0m`);
     }
+    if (res.latencies) {
+      for (const value of Object.values(res.latencies)) {
+        latencySum += value;
+        latencyCount++;
+      }
+    }
   }
-  const durationMs = Date.now() - start;
-  return { pass, total: uniqueNames.length, durationMs };
+  return { pass, total: uniqueNames.length, latencySum, latencyCount };
 }
 
 test('checkBatch removes duplicate domains', async (t) => {
@@ -85,79 +91,79 @@ test('validator tests', async (t) => {
     { name: 'invalid@domain', availability: 'invalid' },
     { name: 'example.invalidtld', availability: 'unsupported' },
   ];
-  const { pass, total, durationMs } = await runTest(specialDomains);
+  const { pass, total, latencySum, latencyCount } = await runTest(specialDomains);
   console.log(`validator test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.validator = { pass, total, cutoff: 1, durationMs };
+  testSummary.validator = { pass, total, cutoff: 1, latencySum, latencyCount };
   t.is(pass, total);
 });
 
 test('dns.host unknown status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(unknownDomains, { only: ['dns.host'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(unknownDomains, { only: ['dns.host'] });
   console.log(`dns.host unknown status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsHostUnknown = { pass, total, cutoff: 1, durationMs };
+  testSummary.dnsHostUnknown = { pass, total, cutoff: 1, latencySum, latencyCount };
   t.true(pass / total >= 1);
 });
 
 test('dns.host unavailable status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['dns.host'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['dns.host'] });
   console.log(`dns.host unavailable domains test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsHostUnavailable = { pass, total, cutoff: 0.99, durationMs };
+  testSummary.dnsHostUnavailable = { pass, total, cutoff: 0.99, latencySum, latencyCount };
   t.true(pass / total >= 0.99);
 });
 
 test('dns.doh unknown status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(unknownDomains, { only: ['dns.doh'], platform: 'browser' });
+  const { pass, total, latencySum, latencyCount } = await runTest(unknownDomains, { only: ['dns.doh'], platform: 'browser' });
   console.log(`dns.doh unknown status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsDohUnknown = { pass, total, cutoff: 1, durationMs };
+  testSummary.dnsDohUnknown = { pass, total, cutoff: 1, latencySum, latencyCount };
   t.true(pass / total >= 1);
 });
 
 test('dns.doh unavailable status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['dns.doh'], platform: 'browser' });
+  const { pass, total, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['dns.doh'], platform: 'browser' });
   console.log(`dns.doh unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsDohUnavailable = { pass, total, cutoff: 0.98, durationMs };
+  testSummary.dnsDohUnavailable = { pass, total, cutoff: 0.98, latencySum, latencyCount };
   t.true(pass / total >= 0.98);
 });
 
 test('dns.ping unknown status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(unknownDomains, { only: ['dns.ping'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(unknownDomains, { only: ['dns.ping'] });
   console.log(`dns.ping test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsPingUnknown = { pass, total, cutoff: 1, durationMs };
+  testSummary.dnsPingUnknown = { pass, total, cutoff: 1, latencySum, latencyCount };
   t.true(pass / total >= 1);
 });
 
 test('dns.ping unavailable status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['dns.ping'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['dns.ping'] });
   console.log(`dns.ping test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsPingUnavailable = { pass, total, cutoff: 0.7, durationMs };
+  testSummary.dnsPingUnavailable = { pass, total, cutoff: 0.7, latencySum, latencyCount };
   t.true(pass / total >= 0.7);
 });
 
 test('whois.lib available status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(availableDomains, { only: ['whois.lib'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(availableDomains, { only: ['whois.lib'] });
   console.log(`whois.lib available status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisLibAvailable = { pass, total, cutoff: 0.1, durationMs };
+  testSummary.whoisLibAvailable = { pass, total, cutoff: 0.1, latencySum, latencyCount };
   t.true(pass / total >= 0.1);
 });
 
 test('whois.lib unavailable status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['whois.lib'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['whois.lib'] });
   console.log(`whois.lib unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisLibUnavailable = { pass, total, cutoff: 0.1, durationMs };
+  testSummary.whoisLibUnavailable = { pass, total, cutoff: 0.1, latencySum, latencyCount };
   t.true(pass / total >= 0.1);
 });
 
 test.skip('whois.api available status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(availableDomains, { only: ['whois.api'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(availableDomains, { only: ['whois.api'] });
   console.log(`whois.api available status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisApiAvailable = { pass, total, cutoff: 0.8, durationMs };
+  testSummary.whoisApiAvailable = { pass, total, cutoff: 0.8, latencySum, latencyCount };
   t.true(pass / total >= 0.8);
 });
 
 test.skip('whois.api unavailable status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['whois.api'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['whois.api'] });
   console.log(`whois.api unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisApiUnavailable = { pass, total, cutoff: 0.8, durationMs };
+  testSummary.whoisApiUnavailable = { pass, total, cutoff: 0.8, latencySum, latencyCount };
   t.true(pass / total >= 0.8);
 });
 
@@ -168,12 +174,12 @@ test('altstatus available status test', async (t) => {
     { name: 'this-domain-should-not-exist-12345.ng', availability: 'available' },
     { name: 'this-domain-should-not-exist-12345.com.ng', availability: 'available' },
   ];
-  const { pass, total, durationMs } = await runTest(domains, {
+  const { pass, total, latencySum, latencyCount } = await runTest(domains, {
     only: ['altstatus'],
     apiKeys: { domainr: '7b6e2a71bcmshf310d57fbbe5248p135b4djsn3c1aa3c16ca3' },
   });
   console.log(`altstatus available status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.altStatusAvailable = { pass, total, cutoff: 1, durationMs };
+  testSummary.altStatusAvailable = { pass, total, cutoff: 1, latencySum, latencyCount };
   t.true(pass / total >= 1);
 });
 
@@ -183,26 +189,26 @@ test('altstatus unavailable status test', async (t) => {
     { name: 'jiji.ng', availability: 'unavailable' },
     { name: 'amazon.com', availability: 'unavailable' },
   ];
-  const { pass, total, durationMs } = await runTest(domains, {
+  const { pass, total, latencySum, latencyCount } = await runTest(domains, {
     only: ['altstatus'],
     apiKeys: { domainr: '7b6e2a71bcmshf310d57fbbe5248p135b4djsn3c1aa3c16ca3' },
   });
   console.log(`altstatus unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.altStatusUnavailable = { pass, total, cutoff: 1, durationMs };
+  testSummary.altStatusUnavailable = { pass, total, cutoff: 1, latencySum, latencyCount };
   t.true(pass / total >= 1);
 });
 
 test('rdap available status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(availableDomains, { only: ['rdap'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(availableDomains, { only: ['rdap'] });
   console.log(`rdap available status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.rdapAvailable = { pass, total, cutoff: 0.8, durationMs };
+  testSummary.rdapAvailable = { pass, total, cutoff: 0.8, latencySum, latencyCount };
   t.true(pass / total >= 0.8);
 });
 
 test('rdap unavailable status tests', async (t) => {
-  const { pass, total, durationMs } = await runTest(unavailableDomains, { only: ['rdap'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(unavailableDomains, { only: ['rdap'] });
   console.log(`rdap unavailable status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.rdapUnavailable = { pass, total, cutoff: 0.8, durationMs };
+  testSummary.rdapUnavailable = { pass, total, cutoff: 0.8, latencySum, latencyCount };
   t.true(pass / total >= 0.8);
 });
 
@@ -219,9 +225,9 @@ test('.ng TLD tests', async (t) => {
       availability: 'unavailable',
     }));
   const domains = [...availableDomains, ...unavailableDomains];
-  const { pass, total, durationMs } = await runTest(domains);
+  const { pass, total, latencySum, latencyCount } = await runTest(domains);
   console.log(`.ng test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.ng = { pass, total, cutoff: 1, durationMs };
+  testSummary.ng = { pass, total, cutoff: 1, latencySum, latencyCount };
   t.true(pass / total == 1);
 });
 
@@ -238,17 +244,17 @@ test('.ng TLD tests with rdap', async (t) => {
       availability: 'unavailable',
     }));
   const domains = [...availableDomains, ...unavailableDomains];
-  const { pass, total, durationMs } = await runTest(domains, { only: ['rdap'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(domains, { only: ['rdap'] });
   console.log(`.ng test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.ngRdap = { pass, total, cutoff: 1, durationMs };
+  testSummary.ngRdap = { pass, total, cutoff: 1, latencySum, latencyCount };
   t.true(pass / total == 1);
 });
 
 test('browser platform tests', async (t) => {
   const domains = [...availableDomains, ...unavailableDomains];
-  const { pass, total, durationMs } = await runTest(domains, { platform: 'browser' });
+  const { pass, total, latencySum, latencyCount } = await runTest(domains, { platform: 'browser' });
   console.log(`browser platform test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.browser = { pass, total, cutoff: 0.8, durationMs };
+  testSummary.browser = { pass, total, cutoff: 0.8, latencySum, latencyCount };
   t.true(pass / total >= 0.8);
 });
 
@@ -267,20 +273,21 @@ test('each adapter sets raw field', async (t) => {
   for (const { ns, opts } of adapters) {
     const [result] = await checkBatch(['example.com'], { only: [ns], ...opts, verbose: true });
     t.true(Object.prototype.hasOwnProperty.call(result.raw, ns), `${ns} should set raw field`);
+    t.true(Object.prototype.hasOwnProperty.call(result.latencies, ns), `${ns} should report latency`);
   }
 });
 
 test('burstMode available domain', async (t) => {
-  const { pass, total, durationMs } = await runTest(availableDomains, { burstMode: true, skip: ['whois.api'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(availableDomains, { burstMode: true, skip: ['whois.api'] });
   console.log(`burstMode available test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.burstModeAvailable = { pass, total, cutoff: 0.95, durationMs };
+  testSummary.burstModeAvailable = { pass, total, cutoff: 0.95, latencySum, latencyCount };
   t.true(pass / total >= 0.95);
 });
 
 test('burstMode unavailable domain', async (t) => {
-  const { pass, total, durationMs } = await runTest(unavailableDomains, { burstMode: true, skip: ['whois.api'] });
+  const { pass, total, latencySum, latencyCount } = await runTest(unavailableDomains, { burstMode: true, skip: ['whois.api'] });
   console.log(`burstMode unavailable test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.burstModeUnavailable = { pass, total, cutoff: 1, durationMs };
+  testSummary.burstModeUnavailable = { pass, total, cutoff: 1, latencySum, latencyCount };
   t.true(pass / total >= 1);
 });
 
@@ -289,19 +296,17 @@ function printSummary() {
   const RED = '\x1b[31m';
   const RESET = '\x1b[0m';
 
-  // Report average latency per domain (ms) for each test in summary
+  // Report average latency per adapter request (ms) for each test in summary
   console.log('\nTest Summary:');
-  for (const [key, { pass, total, cutoff, durationMs }] of Object.entries(testSummary)) {
+  for (const [key, { pass, total, cutoff, latencySum, latencyCount }] of Object.entries(testSummary)) {
     const ratio = `${pass}/${total}`;
     const percent = `${((pass / total) * 100).toFixed(2)}%`;
     const passed = pass / total >= cutoff;
-    const avgLatency = `${durationMs && total ? (durationMs / total).toFixed(2) : 'N/A'}`;
-
+    const avgLatency = '' + latencyCount ? (latencySum / latencyCount).toFixed(2) : 'N/A';
     const color = passed ? GREEN : RED;
-
     console.log(
       color +
-        `- ${key.padEnd(20)}${ratio.padEnd(10)}${percent.padStart(8)} ${avgLatency.padStart(9)}ms/req total: ${durationMs}ms` +
+        `- ${key.padEnd(20)}${ratio.padEnd(10)}${percent.padStart(8)}  avg: ${avgLatency.padStart(9)}ms/req total: ${latencySum}ms` +
         RESET,
     );
   }

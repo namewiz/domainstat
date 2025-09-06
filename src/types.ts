@@ -34,6 +34,10 @@ export interface AdapterResponse {
   fineStatus?: 'expiring_soon' | 'registered_not_in_use' | 'premium' | 'for_sale' | 'reserved';
   source: AdapterSource;
   raw: any;
+  /**
+   * Time taken for the adapter to produce this response in milliseconds.
+   */
+  latency?: number;
   error?: AdapterError;
 }
 
@@ -46,6 +50,10 @@ export interface DomainStatus {
    * Raw responses from each adapter keyed by its namespace.
    */
   raw: Record<string, any>;
+  /**
+   * Latency (in ms) reported by each adapter keyed by its namespace.
+   */
+  latencies: Record<string, number>;
   error?: AdapterError;
 }
 
