@@ -2,19 +2,18 @@
 
 Fast Domain Status is a lightweight TypeScript/JavaScript library for checking
 whether domain names are unregistered (available to register). It queries several data
-sources in a "first good win" order – DNS, RDAP and finally WHOIS – and returns a
+sources in a "first good win" order – DNS (DoH), RDAP and finally WHOIS API – and returns a
 uniform result describing the domain's status.
 
-The package is suitable for both Node.js and browser environments and exposes
-batch utilities for high–volume lookups.
+Node-specific utilities (e.g., host DNS, ping, whois library) have been removed to ensure
+consistent behavior and simpler usage. The library runs with fetch-based adapters.
 
 ## Features
 
 - ⚡ **Fast**: probes DNS first and cancels slower checks once a definitive
   answer is found.
 - 🔁 **Three tier lookup**: DNS → RDAP → WHOIS library/API.
-- 🌐 **Universal**: automatically detects Node or browser and selects the right
-  adapters. A `platform` option allows manual control.
+- 🧩 **Consistent**: single implementation across environments using DoH + RDAP + WHOIS API.
 - ⚙️ **Customisable**: per‑TLD overrides, pluggable logging and adapter include/
   exclude filters.
 - 📦 **Batch helpers**: check lists of domains with concurrency limits or stream
@@ -32,7 +31,7 @@ npm install fast-domain-status
 import { check, checkBatch, checkBatchStream, checkSerial, checkParallel, type DomainStatus } from 'fast-domain-status';
 
 const res = await check('example.com');
-// { domain: 'example.com', availability: 'registered', resolver: 'dns.host', raw: {...} }
+// { domain: 'example.com', availability: 'registered', resolver: 'dns.doh', raw: {...} }
 
 // checkBatch resolves to an array when all lookups finish
 const batch: DomainStatus[] = await checkBatch(['example.com', 'openai.org']);
@@ -98,31 +97,25 @@ finishes.
 | only?            | `string[]`                                                      | Run only adapters whose namespace starts with these prefixes.                                |
 | skip?            | `string[]`                                                      | Skip adapters whose namespace starts with these prefixes.                                    |
 | tldConfig?       | `TldConfigEntry`                                                | Per‑TLD overrides such as RDAP server.                                                       |
-| platform?        | `'auto' \| 'node' \| 'browser'`                                 | Force runtime platform.                                                                      |
 | cache?           | `boolean`                                                       | Enable or disable caching (default `true`).                                                  |
 | apiKeys?         | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services.                                                           |
 | burstMode?       | `boolean`                                                       | When true, use `checkParallel` to query all adapters simultaneously.                         |
 | allottedLatency? | `Partial<Record<AdapterSource, number>>`                        | Per‑adapter latency before launching the next in serial mode; defaults to `200ms` per entry. |
 | timeoutConfig?   | `Partial<Record<AdapterSource, number>>`                        | Maximum execution time per adapter in milliseconds.                                          |
 
-Logging is disabled unless `verbose` is set. When `platform` is `auto` the
-library detects the runtime and chooses suitable adapters. Set `cache: false`
-to disable caching.
+Logging is disabled unless `verbose` is set. Set `cache: false` to disable caching.
 
 ### Adapters
 
 | Namespace           | Description                                 |
 | ------------------- | ------------------------------------------- |
 | `validator`         | Validates domain syntax and supported TLDs. |
-| `dns.host`          | DNS lookup using Node's resolver.           |
-| `dns.ping`          | ICMP ping as a DNS fallback (Node only).    |
 | `dns.doh`           | DNS-over-HTTPS lookup (Cloudflare).         |
 | `rdap`              | Generic RDAP query.                         |
 | `rdap.ng`           | RDAP lookup for `.ng` domains.              |
 | `altstatus.domainr` | Domain status via Domainr API.              |
 | `altstatus.mono`    | Domain status via Mono Domains API.         |
 | `altstatus`         | Fallback when status APIs fail.             |
-| `whois.lib`         | WHOIS lookup using `whois` library.         |
 | `whois.api`         | WHOIS lookup via external APIs.             |
 
 ### API Keys
@@ -142,6 +135,18 @@ check('example.com', {
 
 The library does not read environment variables for credentials; all API keys
 must be supplied explicitly through `apiKeys`.
+
+## Why No Node Utils?
+
+Node-based utilities (host resolver, ping, whois library) are intentionally not supported:
+
+1. They may not be installed or available on the OS.
+2. Behavior differs across operating systems and environments.
+3. Processes tend to linger due to open network handles, slowing exit times.
+4. The only util that can fully resolve status (whois) lacks coverage for many TLDs; growth favors RDAP instead.
+5. Removing Node utils guarantees consistent results between Node and the browser.
+
+If you need the previous Node-util adapters, see the `v1` branch.
 
 ## Demo
 

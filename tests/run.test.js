@@ -112,28 +112,11 @@ test('validator tests', async (t) => {
   t.true(contradictions === 0);
 });
 
-test('dns.host unknown status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, {
-    only: ['dns.host'],
-  });
-  console.log(`dns.host unknown status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsHostUnknown = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
-});
-
-test('dns.host registered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
-    only: ['dns.host'],
-  });
-  console.log(`dns.host registered domains test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsHostRegistered = { pass, total, cutoff: 0.99, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
-});
+// Node-specific DNS (host) tests removed
 
 test('dns.doh unknown status tests', async (t) => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, {
     only: ['dns.doh'],
-    platform: 'browser',
   });
   console.log(`dns.doh unknown status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsDohUnknown = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
@@ -143,48 +126,15 @@ test('dns.doh unknown status tests', async (t) => {
 test('dns.doh registered status tests', async (t) => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
     only: ['dns.doh'],
-    platform: 'browser',
   });
   console.log(`dns.doh registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsDohRegistered = { pass, total, cutoff: 0.98, latencySum, latencyCount, contradictions };
   t.true(contradictions === 0);
 });
 
-test('dns.ping unknown status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, {
-    only: ['dns.ping'],
-  });
-  console.log(`dns.ping test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsPingUnknown = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
-});
+// Node-specific ping tests removed
 
-test('dns.ping registered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
-    only: ['dns.ping'],
-  });
-  console.log(`dns.ping test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.dnsPingRegistered = { pass, total, cutoff: 0.7, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
-});
-
-test('whois.lib unregistered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, {
-    only: ['whois.lib'],
-  });
-  console.log(`whois.lib unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisLibUnregistered = { pass, total, cutoff: 0.1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
-});
-
-test('whois.lib registered status tests', async (t) => {
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
-    only: ['whois.lib'],
-  });
-  console.log(`whois.lib registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.whoisLibRegistered = { pass, total, cutoff: 0.1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
-});
+// Node-specific whois library tests removed
 
 test.skip('whois.api unregistered status tests', async (t) => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, {
@@ -291,24 +241,15 @@ test('.ng TLD tests with rdap', async (t) => {
   t.true(contradictions === 0);
 });
 
-test('browser platform tests', async (t) => {
-  const domains = [...unregisteredDomains, ...registeredDomains];
-  const { pass, total, contradictions, latencySum, latencyCount } = await runTest(domains, { platform: 'browser' });
-  console.log(`browser platform test results: ${((pass * 100) / total).toFixed(2)}%`);
-  testSummary.browser = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
-});
+// platform tests removed
 
 test('each adapter sets raw field', async (t) => {
   const adapters = [
-    { ns: 'dns.host', opts: {} },
-    { ns: 'dns.doh', opts: { platform: 'browser' } },
-    { ns: 'dns.ping', opts: {} },
+    { ns: 'dns.doh', opts: {} },
     { ns: 'rdap', opts: {} },
-    // todo: fix
     // { ns: 'altstatus.domainr', opts: { apiKeys: {domainr: '7b6e2a71bcmshf310d57fbbe5248p135b4djsn3c1aa3c16ca3'}} },
     // { ns: 'altstatus.mono', opts: {} },
-    { ns: 'whois.lib', opts: {} },
+    { ns: 'whois.api', opts: {} },
   ];
 
   for (const { ns, opts } of adapters) {

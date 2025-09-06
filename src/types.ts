@@ -4,23 +4,17 @@ export type Availability = 'unregistered' | 'registered' | 'unsupported' | 'inva
 
 export type AdapterSource =
   | 'validator'
-  | 'dns.host'
-  | 'dns.ping'
   | 'dns.doh'
   | 'rdap'
   | 'rdap.ng'
   | 'altstatus'
   | 'altstatus.domainr'
   | 'altstatus.mono'
-  | 'whois.lib'
   | 'whois.api'
   | 'app';
 
-export enum Platform {
-  AUTO = 'auto',
-  NODE = 'node',
-  BROWSER = 'browser',
-}
+// Platform option and Node-specific utils were removed to ensure consistent
+// behavior across environments and reduce complexity.
 
 export interface AdapterError {
   code: string;
@@ -82,10 +76,6 @@ export interface CheckOptions {
   /** Skip adapters whose namespace starts with one of these prefixes */
   skip?: string[];
   tldConfig?: TldConfigEntry;
-  /**
-   * Platform to run adapters on. Defaults to auto-detect based on environment.
-   */
-  platform?: Platform;
   /**
    * Enable or disable caching. Caching is enabled by default.
    */

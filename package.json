@@ -1,11 +1,11 @@
 {
   "name": "fast-domain-status",
   "version": "0.1.5",
-  "description": "Extremely fast domain status checker library that a combination DOH, HOST, PING, RDAP, WHOIS etc",
+  "description": "Extremely fast domain status checker library using DoH, RDAP and WHOIS API.",
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=node --external:whois",
+    "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=node",
     "test": "npm run build && ava",
     "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo",
     "lint": "eslint .",
@@ -31,8 +31,7 @@
     "npm": "^10.9.0"
   },
   "dependencies": {
-    "tldts": "^7.0.10",
-    "whois": "^2.15.0"
+    "tldts": "^7.0.10"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",

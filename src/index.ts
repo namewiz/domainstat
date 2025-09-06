@@ -1,10 +1,7 @@
-import { DomainStatus, AdapterResponse, CheckOptions, Platform, AdapterError, AdapterSource } from './types';
+import { DomainStatus, AdapterResponse, CheckOptions, AdapterError, AdapterSource } from './types';
 export type { DomainStatus } from './types';
-import { HostAdapter } from './adapters/hostAdapter';
-import { PingAdapter } from './adapters/pingAdapter';
 import { DohAdapter } from './adapters/dohAdapter';
 import { RdapAdapter } from './adapters/rdapAdapter';
-import { WhoisLibAdapter } from './adapters/whoisLibAdapter';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
 import { AltStatusAdapter } from './adapters/altStatusAdapter';
 import { validateDomain } from './validator';
@@ -12,20 +9,13 @@ import { parse } from 'tldts';
 import { getTldAdapter } from './tldAdapters';
 
 const MAX_CONCURRENCY = 10;
-const host = new HostAdapter();
-const ping = new PingAdapter();
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
-const whoisLib = new WhoisLibAdapter();
 const noopLogger: Pick<Console, 'info' | 'warn' | 'error'> = {
   info: () => {},
   warn: () => {},
   error: () => {},
 };
-
-function detectNode(): boolean {
-  return typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
-}
 
 function adapterAllowed(ns: string, opts: CheckOptions): boolean {
   if (opts.only && !opts.only.some((p) => ns.startsWith(p))) {
@@ -43,8 +33,6 @@ function normalizeDomains(domains: string[]): string[] {
 
 // Default per-adapter execution timeouts (in ms)
 const defaultTimeoutConfig: Partial<Record<AdapterSource, number>> = {
-  'dns.ping': 3000,
-  'whois.lib': 3000,
   'whois.api': 3000,
 };
 
@@ -57,8 +45,6 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
   const latencies: Record<string, number> = {};
-  const platform = opts.platform ?? Platform.AUTO;
-  const isNode = platform === Platform.AUTO ? detectNode() : platform === Platform.NODE;
   const parsed = parse(domain.trim().toLowerCase());
   const validated = validateDomain(parsed, domain);
   if (validated.error) {
@@ -149,8 +135,7 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   const getAllottedLatency = (ns: AdapterSource) => opts.allottedLatency?.[ns] ?? 200;
 
   const sequence: Array<{ adapter: any; options: any }> = [];
-  const usePing = opts.only?.some((p) => p.startsWith('dns.ping')) || opts.skip?.some((p) => p.startsWith('dns.host'));
-  const dnsAdapter = tldAdapter?.dns ?? (isNode ? (usePing ? ping : host) : doh);
+  const dnsAdapter = tldAdapter?.dns ?? doh;
   if (adapterAllowed(dnsAdapter.namespace, opts)) {
     sequence.push({ adapter: dnsAdapter, options: { cache: opts.cache, signal } });
   }
@@ -161,7 +146,7 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   if (adapterAllowed(altStatus.namespace, opts)) {
     sequence.push({ adapter: altStatus, options: { cache: opts.cache, signal } });
   }
-  const whoisAdapter = tldAdapter?.whois ?? (isNode ? whoisLib : whoisApi);
+  const whoisAdapter = tldAdapter?.whois ?? whoisApi;
   if (adapterAllowed(whoisAdapter.namespace, opts)) {
     sequence.push({ adapter: whoisAdapter, options: { cache: opts.cache, signal } });
   }
@@ -197,8 +182,6 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
   const latencies: Record<string, number> = {};
-  const platform = opts.platform ?? Platform.AUTO;
-  const isNode = platform === Platform.AUTO ? detectNode() : platform === Platform.NODE;
   const parsed = parse(domain.trim().toLowerCase());
   const validated = validateDomain(parsed, domain);
   if (validated.error) {
@@ -303,9 +286,7 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
         });
     };
 
-    const usePing =
-      opts.only?.some((p) => p.startsWith('dns.ping')) || opts.skip?.some((p) => p.startsWith('dns.host'));
-    const dnsAdapter = tldAdapter?.dns ?? (isNode ? (usePing ? ping : host) : doh);
+    const dnsAdapter = tldAdapter?.dns ?? doh;
     if (adapterAllowed(dnsAdapter.namespace, opts)) {
       launch(dnsAdapter, { cache: opts.cache, signal });
     }
@@ -319,7 +300,7 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
       launch(altStatus, { cache: opts.cache, signal });
     }
 
-    const whoisAdapter = tldAdapter?.whois ?? (isNode ? whoisLib : whoisApi);
+    const whoisAdapter = tldAdapter?.whois ?? whoisApi;
     if (adapterAllowed(whoisAdapter.namespace, opts)) {
       launch(whoisAdapter, { cache: opts.cache, signal });
     }
