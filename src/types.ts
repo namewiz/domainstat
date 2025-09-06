@@ -93,8 +93,13 @@ export interface CheckOptions {
   /** When true, run adapters in parallel */
   burstMode?: boolean;
   /**
-   * Time to wait before launching the next adapter in serial mode, keyed by adapter namespace.
-   * Default is 200ms for any adapter not specified.
+   * Allotted latency before launching the next adapter in serial mode, keyed by adapter namespace.
+   * Defaults to 200ms when not specified for an adapter.
+   */
+  allottedLatency?: Partial<Record<AdapterSource, number>>;
+  /**
+   * Maximum execution time per adapter in milliseconds. When exceeded, the adapter is aborted.
+   * Provide values keyed by adapter namespace. If not specified, defaults may apply.
    */
   timeoutConfig?: Partial<Record<AdapterSource, number>>;
 }

@@ -41,6 +41,17 @@ function normalizeDomains(domains: string[]): string[] {
   return Array.from(new Set(domains.map((d) => d.trim().toLowerCase())));
 }
 
+// Default per-adapter execution timeouts (in ms)
+const defaultTimeoutConfig: Partial<Record<AdapterSource, number>> = {
+  'dns.ping': 3000,
+  'whois.lib': 3000,
+  'whois.api': 3000,
+};
+
+function getAdapterTimeout(ns: AdapterSource, opts: CheckOptions): number | undefined {
+  return opts.timeoutConfig?.[ns] ?? defaultTimeoutConfig[ns];
+}
+
 export async function checkSerial(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
   const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose ? (opts.logger ?? console) : noopLogger;
   logger.info('domain.check.start', { domain });
@@ -87,8 +98,30 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   };
 
   const launch = (adapter: any, options: any) => {
+    // Compose a signal that aborts either when the global signal aborts or when timeout elapses
+    const timeoutMs = getAdapterTimeout(adapter.namespace as AdapterSource, opts);
+    let controller: AbortController | undefined;
+    let timer: any;
+    let onAbort: (() => void) | undefined;
+    const baseSignal: AbortSignal | undefined = options?.signal;
+    const finalOptions = { ...options };
+    if (typeof timeoutMs === 'number') {
+      controller = new AbortController();
+      // If the outer/global signal aborts, propagate
+      if (baseSignal) {
+        if (baseSignal.aborted) {
+          controller.abort();
+        } else {
+          onAbort = () => controller && controller.abort();
+          baseSignal.addEventListener('abort', onAbort);
+        }
+      }
+      timer = setTimeout(() => controller && controller.abort(), timeoutMs);
+      finalOptions.signal = controller.signal;
+    }
+
     const p = adapter
-      .check(parsed, options)
+      .check(parsed, finalOptions)
       .then(handleResponse)
       .catch((err: any) => {
         handleResponse({
@@ -102,12 +135,16 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
             retryable: true,
           },
         });
+      })
+      .finally(() => {
+        if (timer) clearTimeout(timer);
+        if (onAbort && options?.signal) options.signal.removeEventListener('abort', onAbort);
       });
     running.push(p);
   };
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-  const getTimeout = (ns: AdapterSource) => opts.timeoutConfig?.[ns] ?? 200;
+  const getAllottedLatency = (ns: AdapterSource) => opts.allottedLatency?.[ns] ?? 200;
 
   const sequence: Array<{ adapter: any; options: any }> = [];
   const usePing = opts.only?.some((p) => p.startsWith('dns.ping')) || opts.skip?.some((p) => p.startsWith('dns.host'));
@@ -130,7 +167,7 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   for (const item of sequence) {
     if (signal.aborted) break;
     launch(item.adapter, item.options);
-    await Promise.race([sleep(getTimeout(item.adapter.namespace as AdapterSource)), done]);
+    await Promise.race([sleep(getAllottedLatency(item.adapter.namespace as AdapterSource)), done]);
   }
 
   if (!signal.aborted) {
@@ -210,9 +247,30 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
     };
 
     const launch = (adapter: any, options: any) => {
+      // Compose a signal that aborts either when the global signal aborts or when timeout elapses
+      const timeoutMs = getAdapterTimeout(adapter.namespace as AdapterSource, opts);
+      let controller: AbortController | undefined;
+      let timer: any;
+      let onAbort: (() => void) | undefined;
+      const baseSignal: AbortSignal | undefined = options?.signal ?? signal;
+      const finalOptions = { ...options };
+      if (typeof timeoutMs === 'number') {
+        controller = new AbortController();
+        if (baseSignal) {
+          if (baseSignal.aborted) {
+            controller.abort();
+          } else {
+            onAbort = () => controller && controller.abort();
+            baseSignal.addEventListener('abort', onAbort);
+          }
+        }
+        timer = setTimeout(() => controller && controller.abort(), timeoutMs);
+        finalOptions.signal = controller.signal;
+      }
+
       pending++;
       adapter
-        .check(parsed, options)
+        .check(parsed, finalOptions)
         .then(handleResponse)
         .catch((err: any) => {
           handleResponse({
@@ -226,6 +284,10 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
               retryable: true,
             },
           });
+        })
+        .finally(() => {
+          if (timer) clearTimeout(timer);
+          if (onAbort && baseSignal) baseSignal.removeEventListener('abort', onAbort);
         });
     };
 

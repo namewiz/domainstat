@@ -295,13 +295,13 @@ function printSummary() {
     const ratio = `${pass}/${total}`;
     const percent = `${((pass / total) * 100).toFixed(2)}%`;
     const passed = pass / total >= cutoff;
-    const avgLatency = durationMs && total ? (durationMs / total).toFixed(2) : 'N/A';
+    const avgLatency = `${durationMs && total ? (durationMs / total).toFixed(2) : 'N/A'}`;
 
     const color = passed ? GREEN : RED;
 
     console.log(
       color +
-        `- ${key.padEnd(20)}${ratio.padEnd(10)}${percent.padStart(8)}  avg: ${avgLatency}ms\t total: ${durationMs}ms` +
+        `- ${key.padEnd(20)}${ratio.padEnd(10)}${percent.padStart(8)} ${avgLatency.padStart(9)}ms/req total: ${durationMs}ms` +
         RESET,
     );
   }

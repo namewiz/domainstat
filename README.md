@@ -90,18 +90,20 @@ finishes.
 
 ### Options
 
-| Option       | Type                                                            | Description                                                          |
-| ------------ | --------------------------------------------------------------- | -------------------------------------------------------------------- |
-| logger?      | `Pick<Console, 'info' \| 'warn' \| 'error'>`                    | Custom logger used when `verbose` is true.                           |
-| verbose?     | `boolean`                                                       | Enable logging output.                                               |
-| concurrency? | `number`                                                        | Maximum concurrent lookups for batch helpers.                        |
-| only?        | `string[]`                                                      | Run only adapters whose namespace starts with these prefixes.        |
-| skip?        | `string[]`                                                      | Skip adapters whose namespace starts with these prefixes.            |
-| tldConfig?   | `TldConfigEntry`                                                | Per‑TLD overrides such as RDAP server.                               |
-| platform?    | `'auto' \| 'node' \| 'browser'`                                 | Force runtime platform.                                              |
-| cache?       | `boolean`                                                       | Enable or disable caching (default `true`).                          |
-| apiKeys?     | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services.                                   |
-| burstMode?   | `boolean`                                                       | When true, use `checkParallel` to query all adapters simultaneously. |
+| Option           | Type                                                            | Description                                                                                  |
+| ---------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| logger?          | `Pick<Console, 'info' \| 'warn' \| 'error'>`                    | Custom logger used when `verbose` is true.                                                   |
+| verbose?         | `boolean`                                                       | Enable logging output.                                                                       |
+| concurrency?     | `number`                                                        | Maximum concurrent lookups for batch helpers.                                                |
+| only?            | `string[]`                                                      | Run only adapters whose namespace starts with these prefixes.                                |
+| skip?            | `string[]`                                                      | Skip adapters whose namespace starts with these prefixes.                                    |
+| tldConfig?       | `TldConfigEntry`                                                | Per‑TLD overrides such as RDAP server.                                                       |
+| platform?        | `'auto' \| 'node' \| 'browser'`                                 | Force runtime platform.                                                                      |
+| cache?           | `boolean`                                                       | Enable or disable caching (default `true`).                                                  |
+| apiKeys?         | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services.                                                           |
+| burstMode?       | `boolean`                                                       | When true, use `checkParallel` to query all adapters simultaneously.                         |
+| allottedLatency? | `Partial<Record<AdapterSource, number>>`                        | Per‑adapter latency before launching the next in serial mode; defaults to `200ms` per entry. |
+| timeoutConfig?   | `Partial<Record<AdapterSource, number>>`                        | Maximum execution time per adapter in milliseconds. |
 
 Logging is disabled unless `verbose` is set. When `platform` is `auto` the
 library detects the runtime and chooses suitable adapters. Set `cache: false`
