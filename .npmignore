@@ -2,6 +2,7 @@
 .claude
 .github
 src/**
+docs/**
 **/*.ts
 tests/**
 demo/**

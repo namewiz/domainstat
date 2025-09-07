@@ -4,7 +4,7 @@ import { BaseCheckerAdapter } from './baseAdapter';
 // If this host device has a WIFI DNS override, it would intefer with this adapter.
 export class DohAdapter extends BaseCheckerAdapter {
   private url: string;
-  constructor(url = 'https://cloudflare-dns.com/dns-query') {
+  constructor (url = 'https://cloudflare-dns.com/dns-query') {
     super('dns.doh');
     // TODO: Add google cloud dns as fallback - https://dns.google/resolve
     // Maybe use cloudflare for some A-K, and google for the rest?

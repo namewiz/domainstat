@@ -1,20 +1,20 @@
-import { DomainStatus, AdapterResponse, CheckOptions, AdapterError, AdapterSource } from './types';
-export type { DomainStatus } from './types';
+import { parse } from 'tldts';
+import { AltStatusAdapter } from './adapters/altStatusAdapter';
 import { DohAdapter } from './adapters/dohAdapter';
 import { RdapAdapter } from './adapters/rdapAdapter';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
-import { AltStatusAdapter } from './adapters/altStatusAdapter';
-import { validateDomain } from './validator';
-import { parse } from 'tldts';
 import { getTldAdapter } from './tldAdapters';
+import { AdapterError, AdapterResponse, AdapterSource, CheckOptions, DomainStatus } from './types';
+import { validateDomain } from './validator';
+export type { DomainStatus } from './types';
 
 const MAX_CONCURRENCY = 10;
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
 const noopLogger: Pick<Console, 'info' | 'warn' | 'error'> = {
-  info: () => {},
-  warn: () => {},
-  error: () => {},
+  info: () => { },
+  warn: () => { },
+  error: () => { },
 };
 
 function adapterAllowed(ns: string, opts: CheckOptions): boolean {

@@ -1,10 +1,10 @@
-import { AdapterResponse, ParsedDomain, AdapterSource } from '../types';
 import { BaseCheckerAdapter } from '../adapters/baseAdapter';
+import { AdapterResponse, AdapterSource, ParsedDomain } from '../types';
 
 export class NgAdapter extends BaseCheckerAdapter {
   private source: AdapterSource;
 
-  constructor(source: AdapterSource, namespace: AdapterSource) {
+  constructor (source: AdapterSource, namespace: AdapterSource) {
     super(namespace);
     this.source = source;
   }

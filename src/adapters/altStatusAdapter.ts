@@ -3,7 +3,7 @@ import { BaseCheckerAdapter } from './baseAdapter';
 
 export class AltStatusAdapter extends BaseCheckerAdapter {
   private domainrKey?: string;
-  constructor(domainrKey?: string) {
+  constructor (domainrKey?: string) {
     super('altstatus');
     this.domainrKey = domainrKey;
   }

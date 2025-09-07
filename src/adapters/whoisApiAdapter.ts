@@ -4,7 +4,7 @@ import { BaseCheckerAdapter } from './baseAdapter';
 export class WhoisApiAdapter extends BaseCheckerAdapter {
   private freaksKey?: string;
   private xmlKey?: string;
-  constructor(freaksKey?: string, xmlKey?: string) {
+  constructor (freaksKey?: string, xmlKey?: string) {
     super('whois.api');
     this.freaksKey = freaksKey;
     this.xmlKey = xmlKey;

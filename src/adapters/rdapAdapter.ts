@@ -1,9 +1,9 @@
-import { AdapterResponse, TldConfigEntry, ParsedDomain } from '../types';
+import { AdapterResponse, ParsedDomain, TldConfigEntry } from '../types';
 import { BaseCheckerAdapter } from './baseAdapter';
 
 export class RdapAdapter extends BaseCheckerAdapter {
   private baseUrl: string;
-  constructor(baseUrl = 'https://rdap.org/domain/') {
+  constructor (baseUrl = 'https://rdap.org/domain/') {
     super('rdap');
     this.baseUrl = baseUrl;
   }
