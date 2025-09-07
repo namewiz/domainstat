@@ -1,32 +1,310 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Domain Status Checker Demo</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/domainr-search-box/0.0.31/domainr-search-box.min.css"
-      integrity="sha512-ToesibpXrPN9Hh2bWM1CspJRYky35QSSZx70FnCLm9S5MZ1XLDAYKdFQyOgnkGJyn0Vk1khV5ZqwnFxnzV8vuw=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    />
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/domainr-search-box/0.0.31/domainr-search-box.min.js"
-      integrity="sha512-XKXtdiGxIOsWNl3ZwlpRLTG8ViA60ru2EbJZhbhgBlvP0qp1fOmWh3ocEIvmpbdNZvI9EJJGfpOjEnJOI6Q0ig=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
-  </head>
-  <body>
-    <h1>Domain Status Checker Demo</h1>
-    <input type="search" placeholder="type domain query here" id="domainr-search" style="width: 500px" />
-    <div id="domainr-results"></div>
-    <script>
-      var box = new domainr.SearchBox({
-        mashapeKey: '7b6e2a71bcmshf310d57fbbe5248p135b4djsn3c1aa3c16ca3',
-        observe: document.getElementById('domainr-search'),
-        renderTo: document.getElementById('domainr-results'),
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Domain Status</title>
+  <style>
+    :root {
+      --bg: #fff;
+      --text: #0f172a;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --ring: #d1d5db;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .06);
+      --ok-accent: #10b981;
+      --bad-accent: #ef4444;
+      --ok-tint: #ecfdf5;
+      --bad-tint: #fef2f2;
+      --unk-tint: #f3f4f6;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      font: 16px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wrap {
+      max-width: 620px;
+      margin: 64px auto;
+      padding: 0 20px;
+      flex: 1;
+    }
+
+    h1 {
+      font-weight: 700;
+      font-size: 44px;
+      letter-spacing: -.02em;
+      margin: 0 0 8px
+    }
+
+    h4 {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .sub {
+      color: var(--muted);
+      max-width: 720px;
+      margin-bottom: 28px
+    }
+
+    /* Search */
+    .search {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--ring);
+      border-radius: 14px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .search input {
+      border: 0;
+      background: transparent;
+      flex: 1;
+      outline: none;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .search button.icon {
+      border: 0;
+      background: #eef2f7;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      cursor: pointer
+    }
+
+    .search svg {
+      width: 18px;
+      height: 18px
+    }
+
+    /* Results */
+    .list {
+      margin-top: 26px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 18px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      margin: 12px 0;
+      background: var(--bg);
+      transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .row.ok {
+      background: var(--ok-tint);
+      border-color: #10b98133;
+    }
+
+    .row.bad {
+      background: var(--bad-tint);
+      border-color: #ef444433;
+    }
+
+    .row.unk {
+      background: var(--unk-tint);
+      border-color: var(--ring);
+    }
+
+    .domain {
+      font-size: 18px
+    }
+
+    /* Availability chip */
+    .chip {
+      justify-self: end;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      background: #f3f4f6;
+      color: #374151
+    }
+
+    .chip.ok {
+      background: #ecfdf5;
+      border-color: #10b98133;
+      color: #065f46
+    }
+
+    .chip.bad {
+      background: #fef2f2;
+      border-color: #ef444433;
+      color: #7f1d1d
+    }
+
+    .chip.unk {
+      background: #f3f4f6;
+      border-color: #9ca3af33;
+      color: #374151
+    }
+
+    @media (max-width:640px) {
+      h1 {
+        font-size: 32px
+      }
+
+      .row {
+        grid-template-columns: 1fr auto
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h4>namewiz / domainstat</h4>
+    <h1>Find your domain</h1>
+    <p class="sub">Use this fast and unlimited status lookup app to find your next domain quicker. While only a few
+      popular extensions are displayed below, the library supports over 1,500 TLDs.</p>
+    <p class="sub">Install & usage guide is on the <a href="https://www.npmjs.com/package/domainstat">npm page</a>.</p>
+    <div class="search" role="search">
+      <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18.5a7.5 7.5 0 006.15-1.85z" />
+      </svg>
+      <input id="q" placeholder="start typing..." aria-label="Search domain" />
+      <button class="icon" id="clear" title="Clear">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="list" id="results" aria-live="polite"></div>
+  </div>
+
+  <template id="row">
+    <div class="row">
+      <div class="domain"></div>
+      <span class="chip unk">Checking…</span>
+    </div>
+  </template>
+
+  <script type="module">
+    import { check } from '../dist/index.js';
+    // TLDs to generate from query (deduped)
+    const TLDS = ["com", "org", "net", "ai", "blog", "info", "site", "shop", "xyz"];
+
+    // Async availability check — now using domainstat built bundle
+    async function isAvailable(domain) {
+      try {
+        const res = await check(domain, { burstMode: true });
+        // Map library status to UI states
+        if (res.availability === 'unregistered') return 'unregistered';
+        if (res.availability === 'registered') return 'registered';
+        return 'unknown';
+      } catch (e) {
+        return 'unknown';
+      }
+    }
+
+    const results = document.getElementById('results');
+    const q = document.getElementById('q');
+    const clear = document.getElementById('clear');
+
+    // Prevent stale async updates when user keeps typing
+    let renderToken = 0;
+    // Debounce timer for input
+    let debounceId;
+
+    function sanitize(term) {
+      return (term || '').toLowerCase().replace(/[^a-z0-9]/gi, '');
+    }
+
+    function buildDomains(base) {
+      if (!base) return [];
+      return TLDS.map(tld => `${base}.${tld}`);
+    }
+
+    function renderFromQuery(query) {
+      const token = ++renderToken;
+      const base = sanitize(query);
+      const domains = buildDomains(base);
+      results.innerHTML = '';
+      const tpl = document.getElementById('row');
+
+      domains.forEach(domain => {
+        const row = tpl.content.firstElementChild.cloneNode(true);
+        row.querySelector('.domain').textContent = domain;
+        const chip = row.querySelector('.chip');
+        chip.textContent = 'Checking…';
+        chip.className = 'chip unk';
+        row.className = 'row unk';
+
+        // Query availability
+        isAvailable(domain).then(state => {
+          if (token !== renderToken) return; // stale render, skip
+          if (state === 'unregistered') {
+            chip.textContent = 'Available';
+            chip.className = 'chip ok';
+            row.className = 'row ok';
+          } else if (state === 'registered') {
+            chip.textContent = 'Taken';
+            chip.className = 'chip bad';
+            row.className = 'row bad';
+          } else {
+            chip.textContent = 'Unknown';
+            chip.className = 'chip unk';
+            row.className = 'row unk';
+          }
+        }).catch(() => {
+          if (token !== renderToken) return;
+          chip.textContent = 'Unknown';
+          chip.className = 'chip unk';
+          row.className = 'row unk';
+        });
+
+        results.appendChild(row);
       });
-    </script>
-  </body>
+    }
+
+    function onInput() {
+      clearTimeout(debounceId);
+      const value = q.value;
+      debounceId = setTimeout(() => renderFromQuery(value), 100);
+    }
+
+    q.addEventListener('input', onInput);
+    clear.addEventListener('click', () => { q.value = ''; onInput(); q.focus(); });
+
+    // initial
+    q.value = '';
+    renderFromQuery(q.value);
+  </script>
+  <footer style="margin:48px auto;text-align:center;color:#6b7280;font-size:14px;">
+    Made with ❤️ by Justice &amp; AI. <a href="https://github.com/namewiz/domainstat" target="_blank"
+      style="color:#2563eb;text-decoration:none;">Source code</a>
+  </footer>
+</body>
+
 </html>

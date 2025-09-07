@@ -1,6 +1,7 @@
 
 .claude
 .github
+.vscode
 src/**
 docs/**
 **/*.ts
