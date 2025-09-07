@@ -1,8 +1,10 @@
 {
   "popular": {
+    "blog": true,
     "gov": true,
     "io": true,
     "me": true,
+    "shop": true,
     "us": true
   },
   "ccTLDs": {

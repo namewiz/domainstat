@@ -222,7 +222,7 @@
       }
 
       // TLDs to generate from query (deduped)
-      const TLDS = ["com", "org", "net", "ai", "blog", "info", "site", "shop", "xyz"];
+      const TLDS = ["com", "org", "net", "ai", "info", "xyz", "site",];
 
       // Async availability check — using domainstat bundle
       async function isAvailable(domain) {
@@ -311,7 +311,7 @@
       renderFromQuery(q.value);
     })();
   </script>
-  <footer style="margin:48px auto;text-align:center;color:#6b7280;font-size:14px;">
+  <footer style="margin:48px auto 0px; padding-bottom: 40px; text-align:center;color:#6b7280;font-size:14px;">
     Made with ❤️ by Justice &amp; AI. <a href="https://github.com/namewiz/domainstat" target="_blank"
       style="color:#2563eb;text-decoration:none;">Source code</a>
   </footer>
