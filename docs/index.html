@@ -211,95 +211,105 @@
   </template>
 
   <script type="module">
-    import { check } from '../dist/index.js';
-    // TLDs to generate from query (deduped)
-    const TLDS = ["com", "org", "net", "ai", "blog", "info", "site", "shop", "xyz"];
-
-    // Async availability check — now using domainstat built bundle
-    async function isAvailable(domain) {
+    // Try local build first; fallback to CDN when unavailable
+    (async () => {
+      let check;
       try {
-        const res = await check(domain, { burstMode: true });
-        // Map library status to UI states
-        if (res.availability === 'unregistered') return 'unregistered';
-        if (res.availability === 'registered') return 'registered';
-        return 'unknown';
-      } catch (e) {
-        return 'unknown';
+        ({ check } = await import('../dist/index.js'));
+      } catch (err) {
+        console.warn('Local domainstat not found, using CDN.', err);
+        ({ check } = await import('https://cdn.jsdelivr.net/npm/domainstat@latest/dist/index.js'));
       }
-    }
 
-    const results = document.getElementById('results');
-    const q = document.getElementById('q');
-    const clear = document.getElementById('clear');
+      // TLDs to generate from query (deduped)
+      const TLDS = ["com", "org", "net", "ai", "blog", "info", "site", "shop", "xyz"];
 
-    // Prevent stale async updates when user keeps typing
-    let renderToken = 0;
-    // Debounce timer for input
-    let debounceId;
+      // Async availability check — using domainstat bundle
+      async function isAvailable(domain) {
+        try {
+          const res = await check(domain, { burstMode: true });
+          // Map library status to UI states
+          if (res.availability === 'unregistered') return 'unregistered';
+          if (res.availability === 'registered') return 'registered';
+          return 'unknown';
+        } catch (e) {
+          return 'unknown';
+        }
+      }
 
-    function sanitize(term) {
-      return (term || '').toLowerCase().replace(/[^a-z0-9]/gi, '');
-    }
+      const results = document.getElementById('results');
+      const q = document.getElementById('q');
+      const clear = document.getElementById('clear');
 
-    function buildDomains(base) {
-      if (!base) return [];
-      return TLDS.map(tld => `${base}.${tld}`);
-    }
+      // Prevent stale async updates when user keeps typing
+      let renderToken = 0;
+      // Debounce timer for input
+      let debounceId;
 
-    function renderFromQuery(query) {
-      const token = ++renderToken;
-      const base = sanitize(query);
-      const domains = buildDomains(base);
-      results.innerHTML = '';
-      const tpl = document.getElementById('row');
+      function sanitize(term) {
+        return (term || '').toLowerCase().replace(/[^a-z0-9]/gi, '');
+      }
 
-      domains.forEach(domain => {
-        const row = tpl.content.firstElementChild.cloneNode(true);
-        row.querySelector('.domain').textContent = domain;
-        const chip = row.querySelector('.chip');
-        chip.textContent = 'Checking…';
-        chip.className = 'chip unk';
-        row.className = 'row unk';
+      function buildDomains(base) {
+        if (!base) return [];
+        return TLDS.map(tld => `${base}.${tld}`);
+      }
 
-        // Query availability
-        isAvailable(domain).then(state => {
-          if (token !== renderToken) return; // stale render, skip
-          if (state === 'unregistered') {
-            chip.textContent = 'Available';
-            chip.className = 'chip ok';
-            row.className = 'row ok';
-          } else if (state === 'registered') {
-            chip.textContent = 'Taken';
-            chip.className = 'chip bad';
-            row.className = 'row bad';
-          } else {
+      function renderFromQuery(query) {
+        const token = ++renderToken;
+        const base = sanitize(query);
+        const domains = buildDomains(base);
+        results.innerHTML = '';
+        const tpl = document.getElementById('row');
+
+        domains.forEach(domain => {
+          const row = tpl.content.firstElementChild.cloneNode(true);
+          row.querySelector('.domain').textContent = domain;
+          const chip = row.querySelector('.chip');
+          chip.textContent = 'Checking…';
+          chip.className = 'chip unk';
+          row.className = 'row unk';
+
+          // Query availability
+          isAvailable(domain).then(state => {
+            if (token !== renderToken) return; // stale render, skip
+            if (state === 'unregistered') {
+              chip.textContent = 'Available';
+              chip.className = 'chip ok';
+              row.className = 'row ok';
+            } else if (state === 'registered') {
+              chip.textContent = 'Taken';
+              chip.className = 'chip bad';
+              row.className = 'row bad';
+            } else {
+              chip.textContent = 'Unknown';
+              chip.className = 'chip unk';
+              row.className = 'row unk';
+            }
+          }).catch(() => {
+            if (token !== renderToken) return;
             chip.textContent = 'Unknown';
             chip.className = 'chip unk';
             row.className = 'row unk';
-          }
-        }).catch(() => {
-          if (token !== renderToken) return;
-          chip.textContent = 'Unknown';
-          chip.className = 'chip unk';
-          row.className = 'row unk';
+          });
+
+          results.appendChild(row);
         });
+      }
 
-        results.appendChild(row);
-      });
-    }
+      function onInput() {
+        clearTimeout(debounceId);
+        const value = q.value;
+        debounceId = setTimeout(() => renderFromQuery(value), 100);
+      }
 
-    function onInput() {
-      clearTimeout(debounceId);
-      const value = q.value;
-      debounceId = setTimeout(() => renderFromQuery(value), 100);
-    }
+      q.addEventListener('input', onInput);
+      clear.addEventListener('click', () => { q.value = ''; onInput(); q.focus(); });
 
-    q.addEventListener('input', onInput);
-    clear.addEventListener('click', () => { q.value = ''; onInput(); q.focus(); });
-
-    // initial
-    q.value = '';
-    renderFromQuery(q.value);
+      // initial
+      q.value = '';
+      renderFromQuery(q.value);
+    })();
   </script>
   <footer style="margin:48px auto;text-align:center;color:#6b7280;font-size:14px;">
     Made with ❤️ by Justice &amp; AI. <a href="https://github.com/namewiz/domainstat" target="_blank"
