@@ -58,7 +58,7 @@ export interface CheckerAdapter {
   namespace: string;
   check(
     domainObj: ParsedDomain,
-    opts?: { tldConfig?: TldConfigEntry; cache?: boolean; signal?: AbortSignal },
+    opts?: { tldConfig?: TldConfigEntry; signal?: AbortSignal },
   ): Promise<AdapterResponse>;
 }
 

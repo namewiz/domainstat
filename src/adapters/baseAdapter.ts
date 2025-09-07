@@ -1,10 +1,9 @@
 import { AdapterResponse, AdapterSource, CheckerAdapter, ParsedDomain, TldConfigEntry } from '../types';
 
-type BaseOpts = { tldConfig?: TldConfigEntry; cache?: boolean; signal?: AbortSignal };
+type BaseOpts = { tldConfig?: TldConfigEntry; signal?: AbortSignal };
 
 export abstract class BaseCheckerAdapter implements CheckerAdapter {
   public readonly namespace: AdapterSource;
-  private static cache = new Map<string, AdapterResponse>();
 
   constructor (namespace: AdapterSource) {
     if (!namespace) {
@@ -14,23 +13,9 @@ export abstract class BaseCheckerAdapter implements CheckerAdapter {
   }
 
   async check(domainObj: ParsedDomain, opts: BaseOpts = {}): Promise<AdapterResponse> {
-    const domain = domainObj.domain as string;
-    const cacheEnabled = opts.cache !== false;
-    const key = `${this.namespace}:${domain}`;
-    if (cacheEnabled) {
-      const cached = BaseCheckerAdapter.cache.get(key);
-      if (cached) {
-        return cached;
-      }
-    }
-
-    const { cache, ...rest } = opts;
     const start = Date.now();
-    const res = await this.doCheck(domainObj, rest);
+    const res = await this.doCheck(domainObj, opts);
     res.latency = Date.now() - start;
-    if (cacheEnabled && (!res.error || res.error.retryable === false)) {
-      BaseCheckerAdapter.cache.set(key, res);
-    }
     return res;
   }
 

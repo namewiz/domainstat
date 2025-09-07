@@ -11,6 +11,7 @@ export type { DomainStatus } from './types';
 const MAX_CONCURRENCY = 10;
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
+const responseCache = new Map<string, DomainStatus>();
 const noopLogger: Pick<Console, 'info' | 'warn' | 'error'> = {
   info: () => { },
   warn: () => { },
@@ -137,18 +138,18 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   const sequence: Array<{ adapter: any; options: any }> = [];
   const dnsAdapter = tldAdapter?.dns ?? doh;
   if (adapterAllowed(dnsAdapter.namespace, opts)) {
-    sequence.push({ adapter: dnsAdapter, options: { cache: opts.cache, signal } });
+    sequence.push({ adapter: dnsAdapter, options: { signal } });
   }
   const rdapAdapter = tldAdapter?.rdap ?? rdap;
   if (!opts.tldConfig?.skipRdap && adapterAllowed(rdapAdapter.namespace, opts)) {
-    sequence.push({ adapter: rdapAdapter, options: { tldConfig: opts.tldConfig, cache: opts.cache, signal } });
+    sequence.push({ adapter: rdapAdapter, options: { tldConfig: opts.tldConfig, signal } });
   }
   if (adapterAllowed(altStatus.namespace, opts)) {
-    sequence.push({ adapter: altStatus, options: { cache: opts.cache, signal } });
+    sequence.push({ adapter: altStatus, options: { signal } });
   }
   const whoisAdapter = tldAdapter?.whois ?? whoisApi;
   if (adapterAllowed(whoisAdapter.namespace, opts)) {
-    sequence.push({ adapter: whoisAdapter, options: { cache: opts.cache, signal } });
+    sequence.push({ adapter: whoisAdapter, options: { signal } });
   }
 
   for (const item of sequence) {
@@ -288,21 +289,21 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
 
     const dnsAdapter = tldAdapter?.dns ?? doh;
     if (adapterAllowed(dnsAdapter.namespace, opts)) {
-      launch(dnsAdapter, { cache: opts.cache, signal });
+      launch(dnsAdapter, { signal });
     }
 
     const rdapAdapter = tldAdapter?.rdap ?? rdap;
     if (!opts.tldConfig?.skipRdap && adapterAllowed(rdapAdapter.namespace, opts)) {
-      launch(rdapAdapter, { tldConfig: opts.tldConfig, cache: opts.cache, signal });
+      launch(rdapAdapter, { tldConfig: opts.tldConfig, signal });
     }
 
     if (adapterAllowed(altStatus.namespace, opts)) {
-      launch(altStatus, { cache: opts.cache, signal });
+      launch(altStatus, { signal });
     }
 
     const whoisAdapter = tldAdapter?.whois ?? whoisApi;
     if (adapterAllowed(whoisAdapter.namespace, opts)) {
-      launch(whoisAdapter, { cache: opts.cache, signal });
+      launch(whoisAdapter, { signal });
     }
 
     if (pending === 0) {
@@ -312,7 +313,19 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
 }
 
 export async function check(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
-  return opts.burstMode ? checkParallel(domain, opts) : checkSerial(domain, opts);
+  const normalized = domain.trim().toLowerCase();
+  const cacheEnabled = opts.cache !== false;
+  if (cacheEnabled) {
+    const cached = responseCache.get(normalized);
+    if (cached && adapterAllowed(cached.resolver, opts)) {
+      return cached;
+    }
+  }
+  const result = opts.burstMode ? await checkParallel(normalized, opts) : await checkSerial(normalized, opts);
+  if (cacheEnabled && (!result.error || result.error.retryable === false)) {
+    responseCache.set(normalized, result);
+  }
+  return result;
 }
 
 export async function* checkBatchStream(domains: string[], opts: CheckOptions = {}): AsyncGenerator<DomainStatus> {
