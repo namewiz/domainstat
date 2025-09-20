@@ -1,3 +1,4 @@
 node_modules/*
 dist/*
 demo/index.js
+TODO.*

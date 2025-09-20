@@ -5,11 +5,11 @@
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=node",
-    "test": "npm run build && ava",
+    "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral",
+    "test": "npm run build && node --test",
     "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo"
   },
-  "homepage": "https://github.com/namewiz/domainstat",
+  "homepage": "https://namewiz.github.io/domainstat",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/namewiz/domainstat.git"
@@ -36,13 +36,5 @@
   "dependencies": {
     "tldts": "^7.0.10"
   },
-  "devDependencies": {
-    "ava": "^6.4.1"
-  },
-  "ava": {
-    "files": [
-      "tests/**/*.test.js"
-    ],
-    "timeout": "3m"
-  }
+  "devDependencies": {}
 }

@@ -1,4 +1,5 @@
-import test from 'ava';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 import { checkBatchStream, checkBatch, check } from '../dist/index.js';
 import registeredDomainsJson from '../src/registered-domains.json' with { type: 'json' };
 import supportedTlDs from '../src/tlds.json' with { type: 'json' };
@@ -92,15 +93,15 @@ async function runTest(domains, opts = {}) {
   return { pass, unresolved, contradictions, total: uniqueNames.length, latencySum, latencyCount };
 }
 
-test('checkBatch removes duplicate domains', async (t) => {
+test('checkBatch removes duplicate domains', async () => {
   const results = await checkBatch([' Example.invalidtld ', 'example.INVALIDTLD']);
-  t.deepEqual(
+  assert.deepStrictEqual(
     results.map((r) => r.domain),
     ['example.invalidtld'],
   );
 });
 
-test('validator tests', async (t) => {
+test('validator tests', async () => {
   const specialDomains = [
     { name: 'www.example.com', availability: 'invalid' },
     { name: 'invalid@domain', availability: 'invalid' },
@@ -109,52 +110,52 @@ test('validator tests', async (t) => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(specialDomains);
   console.log(`validator test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.validator = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
 // Node-specific DNS (host) tests removed
 
-test('dns.doh unknown status tests', async (t) => {
+test('dns.doh unknown status tests', async () => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unknownDomains, {
     only: ['dns.doh'],
   });
   console.log(`dns.doh unknown status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsDohUnknown = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
-test('dns.doh registered status tests', async (t) => {
+test('dns.doh registered status tests', async () => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
     only: ['dns.doh'],
   });
   console.log(`dns.doh registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.dnsDohRegistered = { pass, total, cutoff: 0.98, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
 // Node-specific ping tests removed
 
 // Node-specific whois library tests removed
 
-test.skip('whois.api unregistered status tests', async (t) => {
+test.skip('whois.api unregistered status tests', async () => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, {
     only: ['whois.api'],
   });
   console.log(`whois.api unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisApiUnregistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
-test.skip('whois.api registered status tests', async (t) => {
+test.skip('whois.api registered status tests', async () => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
     only: ['whois.api'],
   });
   console.log(`whois.api registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.whoisApiRegistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
-test('altstatus unregistered status test', async (t) => {
+test('altstatus unregistered status test', async () => {
   const domains = [
     { name: 'this-domain-should-not-exist-12345.com', availability: 'unregistered' },
     { name: 'this-domain-should-not-exist-12345.dev', availability: 'unregistered' },
@@ -167,10 +168,10 @@ test('altstatus unregistered status test', async (t) => {
   });
   console.log(`altstatus unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.altStatusUnregistered = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
-test('altstatus registered status test', async (t) => {
+test('altstatus registered status test', async () => {
   const domains = [
     { name: 'google.dev', availability: 'registered' },
     { name: 'jiji.ng', availability: 'registered' },
@@ -182,28 +183,28 @@ test('altstatus registered status test', async (t) => {
   });
   console.log(`altstatus registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.altStatusRegistered = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
-test('rdap unregistered status tests', async (t) => {
+test('rdap unregistered status tests', async () => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, {
     only: ['rdap'],
   });
   console.log(`rdap unregistered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.rdapUnregistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
-test('rdap registered status tests', async (t) => {
+test('rdap registered status tests', async () => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
     only: ['rdap'],
   });
   console.log(`rdap registered status test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.rdapRegistered = { pass, total, cutoff: 0.8, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
-test('.ng TLD tests', async (t) => {
+test('.ng TLD tests', async () => {
   const ngTlds = tldList.filter((tld) => tld === 'ng' || tld.endsWith('.ng'));
   const unregisteredDomains = ngTlds.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
@@ -219,10 +220,10 @@ test('.ng TLD tests', async (t) => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(domains);
   console.log(`.ng test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.ng = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
-test('.ng TLD tests with rdap', async (t) => {
+test('.ng TLD tests with rdap', async () => {
   const ngTlds = tldList.filter((tld) => tld === 'ng' || tld.endsWith('.ng'));
   const unregisteredDomains = ngTlds.map((tld) => ({
     name: `this-domain-should-not-exist-12345.${tld}`,
@@ -238,12 +239,12 @@ test('.ng TLD tests with rdap', async (t) => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(domains, { only: ['rdap'] });
   console.log(`.ng test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.ngRdap = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
 // platform tests removed
 
-test('each adapter sets raw field', async (t) => {
+test('each adapter sets raw field', async () => {
   const adapters = [
     { ns: 'dns.doh', opts: {} },
     { ns: 'rdap', opts: {} },
@@ -254,29 +255,29 @@ test('each adapter sets raw field', async (t) => {
 
   for (const { ns, opts } of adapters) {
     const [result] = await checkBatch(['example.com'], { only: [ns], ...opts, verbose: true });
-    t.true(Object.prototype.hasOwnProperty.call(result.raw, ns), `${ns} should set raw field`);
-    t.true(Object.prototype.hasOwnProperty.call(result.latencies, ns), `${ns} should report latency`);
+    assert.ok(Object.prototype.hasOwnProperty.call(result.raw, ns), `${ns} should set raw field`);
+    assert.ok(Object.prototype.hasOwnProperty.call(result.latencies, ns), `${ns} should report latency`);
   }
 });
 
-test('burstMode unregistered domain', async (t) => {
+test('burstMode unregistered domain', async () => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(unregisteredDomains, {
     burstMode: true,
     skip: ['whois.api'],
   });
   console.log(`burstMode unregistered test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.burstModeUnregistered = { pass, total, cutoff: 0.95, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
-test('burstMode registered domain', async (t) => {
+test('burstMode registered domain', async () => {
   const { pass, total, contradictions, latencySum, latencyCount } = await runTest(registeredDomains, {
     burstMode: true,
     skip: ['whois.api'],
   });
   console.log(`burstMode registered test results: ${((pass * 100) / total).toFixed(2)}%`);
   testSummary.burstModeRegistered = { pass, total, cutoff: 1, latencySum, latencyCount, contradictions };
-  t.true(contradictions === 0);
+  assert.strictEqual(contradictions, 0);
 });
 
 function printSummary() {
@@ -314,6 +315,6 @@ function printSummary() {
   }
 }
 
-test.after.always(() => {
+test.after(() => {
   printSummary();
 });

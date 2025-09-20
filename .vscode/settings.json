@@ -1,8 +1,9 @@
 {
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.organizeImports": true,
-    "source.fixAll": true
+    "source.organizeImports": "explicit",
+    "source.removeUnusedImports": "explicit",
+    "source.fixAll": "explicit"
   },
 
   "files.eol": "\n",
@@ -65,4 +66,3 @@
   "typescript.preferences.importModuleSpecifier": "shortest",
   "javascript.preferences.importModuleSpecifier": "shortest"
 }
-
