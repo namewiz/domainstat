@@ -1,11 +1,13 @@
 {
   "name": "domainstat",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Extremely fast domain status checker library using DoH, RDAP and WHOIS API.",
   "type": "module",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral",
+    "build": "npm run build:lib && npm run build:cli",
+    "build:lib": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral",
+    "build:cli": "npx -y esbuild src/cli.ts --bundle --minify --format=esm --target=node20 --outfile=dist/cli.js --platform=node",
     "test": "npm run build && node --test",
     "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo"
   },
@@ -27,6 +29,9 @@
   ],
   "exports": {
     ".": "./dist/index.js"
+  },
+  "bin": {
+    "domainstat": "./dist/cli.js"
   },
   "license": "MIT",
   "engines": {

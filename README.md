@@ -1,8 +1,8 @@
 # DomainStat
 
-[![Build](https://github.com/namewiz/domainstat/actions/workflows/build.yml/badge.svg)](https://github.com/namewiz/domainstat/actions/workflows/build.yml) 
-[![Test](https://github.com/namewiz/domainstat/actions/workflows/test.yml/badge.svg)](https://github.com/namewiz/domainstat/actions/workflows/test.yml) 
-[![NPM](http://img.shields.io/npm/v/domainstat.svg)](https://www.npmjs.com/package/domainstat) 
+[![Build](https://github.com/namewiz/domainstat/actions/workflows/build.yml/badge.svg)](https://github.com/namewiz/domainstat/actions/workflows/build.yml)
+[![Test](https://github.com/namewiz/domainstat/actions/workflows/test.yml/badge.svg)](https://github.com/namewiz/domainstat/actions/workflows/test.yml)
+[![NPM](http://img.shields.io/npm/v/domainstat.svg)](https://www.npmjs.com/package/domainstat)
 [![License](https://img.shields.io/npm/l/domainstat.svg)](https://github.com/namewiz/domainstat/blob/main/LICENSE)
 
 
@@ -141,6 +141,46 @@ check('example.com', {
 
 The library does not read environment variables for credentials; all API keys
 must be supplied explicitly through `apiKeys`.
+
+## Command-line Usage
+
+The package also provides a CLI so you can check domains directly from your
+terminal without writing code:
+
+```bash
+npx domainstat google.com newdomain.dev
+```
+
+Results stream to stdout as soon as each lookup finishes. When connected to a
+TTY you get colourised, human-friendly output:
+
+```
+Index  Domain         Status        Resolver           Details
+-----  ------        -------        --------          --------
+1/2    google.com     registered    dns.doh            latency:dns.doh=76ms
+2/2    newdomain.dev  unregistered  rdap               latency:dns.doh=73ms, rdap=193ms
+```
+
+For machine consumption use the JSON output mode:
+
+```bash
+npx domainstat --json --only validator example.invalidtld
+```
+
+Key options include:
+
+- `--concurrency <n>` – control how many domains are checked at once.
+- `--burst` / `--serial` – choose whether adapters run in parallel or sequentially.
+- `--only` / `--skip` – restrict or exclude adapter namespaces.
+- `--domainr-key`, `--whoisfreaks-key`, `--whoisxml-key` – provide API keys when
+  needed.
+- `--skip-rdap`, `--rdap-server <url>` – tweak RDAP behaviour.
+- `--timeout adapter=ms` – abort specific adapters after the given time.
+- `--allotted-latency adapter=ms` – adjust serial launch delays.
+
+The CLI reads API keys from the environment variables
+`DOMAINSTAT_DOMAINR_KEY`, `DOMAINSTAT_WHOISFREAKS_KEY` and
+`DOMAINSTAT_WHOISXML_KEY` when the corresponding flags are not supplied.
 
 ## Why No Node Utils?
 
