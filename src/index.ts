@@ -11,7 +11,84 @@ export type { DomainStatus } from './types';
 const MAX_CONCURRENCY = 10;
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
-const responseCache = new Map<string, DomainStatus>();
+
+type ResultCache = {
+  get(domain: string): Promise<DomainStatus | undefined>;
+  set(domain: string, value: DomainStatus): Promise<void>;
+};
+
+const CACHE_NAME = 'domainstat:response-cache';
+const CACHE_URL_PREFIX = 'https://domainstat.local/cache/';
+
+function createMemoryCache(): ResultCache {
+  const store = new Map<string, DomainStatus>();
+  return {
+    async get(domain: string) {
+      return store.get(domain);
+    },
+    async set(domain: string, value: DomainStatus) {
+      store.set(domain, value);
+    },
+  };
+}
+
+function createBrowserCache(scope: any): ResultCache {
+  const cacheStorage: any = scope.caches;
+  let cachePromise: Promise<any> | null = null;
+  const getCache = async () => {
+    if (!cachePromise) {
+      cachePromise = cacheStorage.open(CACHE_NAME);
+    }
+    try {
+      return await cachePromise;
+    } catch (err) {
+      cachePromise = null;
+      throw err;
+    }
+  };
+  const buildRequest = (domain: string) => new scope.Request(`${CACHE_URL_PREFIX}${encodeURIComponent(domain)}`);
+  return {
+    async get(domain: string) {
+      try {
+        const cache = await getCache();
+        const cachedResponse = await cache.match(buildRequest(domain));
+        if (!cachedResponse) return undefined;
+        const text = await cachedResponse.text();
+        if (!text) return undefined;
+        return JSON.parse(text) as DomainStatus;
+      } catch {
+        cachePromise = null;
+        return undefined;
+      }
+    },
+    async set(domain: string, value: DomainStatus) {
+      try {
+        const cache = await getCache();
+        const response = new scope.Response(JSON.stringify(value), {
+          headers: { 'content-type': 'application/json' },
+        });
+        await cache.put(buildRequest(domain), response);
+      } catch {
+        cachePromise = null;
+        // Ignore write errors to avoid breaking the resolution flow
+      }
+    },
+  };
+}
+
+function createResponseCache(): ResultCache {
+  const scope: any = typeof globalThis !== 'undefined' ? globalThis : {};
+  const isBrowser = typeof scope.window !== 'undefined' && scope.window === scope;
+  const hasCacheStorage = isBrowser && scope.caches && typeof scope.caches.open === 'function';
+  const hasRequest = typeof scope.Request === 'function';
+  const hasResponse = typeof scope.Response === 'function';
+  if (hasCacheStorage && hasRequest && hasResponse) {
+    return createBrowserCache(scope);
+  }
+  return createMemoryCache();
+}
+
+const responseCache: ResultCache = createResponseCache();
 const noopLogger: Pick<Console, 'info' | 'warn' | 'error'> = {
   info: () => { },
   warn: () => { },
@@ -316,14 +393,14 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
   const normalized = domain.trim().toLowerCase();
   const cacheEnabled = opts.cache !== false;
   if (cacheEnabled) {
-    const cached = responseCache.get(normalized);
+    const cached = await responseCache.get(normalized);
     if (cached && adapterAllowed(cached.resolver, opts)) {
       return cached;
     }
   }
   const result = opts.burstMode ? await checkParallel(normalized, opts) : await checkSerial(normalized, opts);
   if (cacheEnabled && (!result.error || result.error.retryable === false)) {
-    responseCache.set(normalized, result);
+    await responseCache.set(normalized, result);
   }
   return result;
 }
