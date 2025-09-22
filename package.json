@@ -6,7 +6,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "npm run build:lib && npm run build:cli",
-    "build:lib": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral",
+    "build:lib": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral && tsc --emitDeclarationOnly",
     "build:cli": "npx -y esbuild src/cli.ts --bundle --minify --format=esm --target=node20 --outfile=dist/cli.js --platform=node",
     "test": "npm run build && node --test",
     "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo"
@@ -41,5 +41,8 @@
   "dependencies": {
     "tldts": "^7.0.10"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.2"
+  }
 }

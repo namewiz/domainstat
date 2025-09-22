@@ -14,7 +14,7 @@ export const tldAdapters: Record<string, TldAdapter> = {
   'net.ng': { rdap: new NgAdapter('rdap', 'rdap.ng') },
 };
 
-export function getTldAdapter(suffix?: string): TldAdapter | undefined {
+export function getTldAdapter(suffix: string | null): TldAdapter | undefined {
   if (!suffix) return undefined;
   const lower = suffix.toLowerCase();
   if (tldAdapters[lower]) return tldAdapters[lower];
