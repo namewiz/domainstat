@@ -1,4 +1,4 @@
-import type { ParseResult } from 'tldts';
+import type { IResult } from 'tldts-core';
 
 export type Availability = 'unregistered' | 'registered' | 'unsupported' | 'invalid' | 'unknown';
 
@@ -51,7 +51,7 @@ export interface DomainStatus {
   error?: AdapterError;
 }
 
-export type ParsedDomain = ParseResult;
+export type ParsedDomain = IResult;
 
 export interface CheckerAdapter {
   /** Unique identifier used to store results for this adapter */

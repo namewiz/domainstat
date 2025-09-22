@@ -4,7 +4,7 @@ import { DohAdapter } from './adapters/dohAdapter';
 import { RdapAdapter } from './adapters/rdapAdapter';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
 import { getTldAdapter } from './tldAdapters';
-import { AdapterError, AdapterResponse, AdapterSource, CheckOptions, DomainStatus } from './types';
+import { AdapterError, AdapterResponse, AdapterSource, Availability, CheckOptions, DomainStatus } from './types';
 import { validateDomain } from './validator';
 export type { DomainStatus } from './types';
 
@@ -241,8 +241,8 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
 
   const finalResult = result ?? {
     domain: name,
-    availability: 'unknown',
-    resolver: 'app',
+    availability: 'unknown' as Availability,
+    resolver: 'app' as AdapterSource,
     raw,
     latencies,
     error: finalError,
