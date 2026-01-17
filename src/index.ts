@@ -3,6 +3,7 @@ import { AltStatusAdapter } from './adapters/altStatusAdapter';
 import { DohAdapter } from './adapters/dohAdapter';
 import { RdapAdapter } from './adapters/rdapAdapter';
 import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
+import { parseRdapToWhois } from './rdap-parser';
 import { getTldAdapter } from './tldAdapters';
 import { AdapterError, AdapterResponse, AdapterSource, CheckOptions, DomainStatus } from './types';
 import { validateDomain } from './validator';
@@ -122,6 +123,7 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose ? (opts.logger ?? console) : noopLogger;
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
+  const parsedData: Record<string, any> = {};
   const latencies: Record<string, number> = {};
   const parsed = parse(domain.trim().toLowerCase());
   const validated = validateDomain(parsed, domain);
@@ -136,7 +138,7 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
     return validated;
   }
   const name = parsed.domain!;
-  const tldAdapter = getTldAdapter(parsed.publicSuffix);
+  const tldAdapter = getTldAdapter(parsed.publicSuffix ?? undefined);
 
   const altStatus = new AltStatusAdapter(opts.apiKeys?.domainr);
   const whoisApi = new WhoisApiAdapter(opts.apiKeys?.whoisfreaks, opts.apiKeys?.whoisxml);
@@ -152,9 +154,19 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   const handleResponse = (res: AdapterResponse) => {
     raw[res.source] = res.raw;
     latencies[res.source] = res.latency ?? 0;
+
+    // Parse RDAP responses
+    if ((res.source === 'rdap' || res.source === 'rdap.ng') && res.raw && !res.error) {
+      try {
+        parsedData[res.source] = parseRdapToWhois(res.raw);
+      } catch (err) {
+        logger.warn(`${res.source}.parse_failed`, { domain: name, error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+
     if (!signal.aborted && !res.error && res.availability !== 'unknown') {
       controller.abort();
-      result = { domain: name, availability: res.availability, resolver: res.source, raw, latencies, error: undefined };
+      result = { domain: name, availability: res.availability, resolver: res.source, raw, parsed: parsedData, latencies, error: undefined };
       return;
     }
     if (res.error) {
@@ -244,6 +256,7 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
     availability: 'unknown',
     resolver: 'app',
     raw,
+    parsed: parsedData,
     latencies,
     error: finalError,
   };
@@ -259,6 +272,7 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
   const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose ? (opts.logger ?? console) : noopLogger;
   logger.info('domain.check.start', { domain });
   const raw: Record<string, any> = {};
+  const parsedData: Record<string, any> = {};
   const latencies: Record<string, number> = {};
   const parsed = parse(domain.trim().toLowerCase());
   const validated = validateDomain(parsed, domain);
@@ -297,6 +311,16 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
     const handleResponse = (res: AdapterResponse) => {
       raw[res.source] = res.raw;
       latencies[res.source] = res.latency ?? 0;
+
+      // Parse RDAP responses
+      if ((res.source === 'rdap' || res.source === 'rdap.ng') && res.raw && !res.error) {
+        try {
+          parsedData[res.source] = parseRdapToWhois(res.raw);
+        } catch (err) {
+          logger.warn(`${res.source}.parse_failed`, { domain: name, error: err instanceof Error ? err.message : String(err) });
+        }
+      }
+
       if (!controller.signal.aborted && !res.error && res.availability !== 'unknown') {
         controller.abort();
         finish({
@@ -304,6 +328,7 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
           availability: res.availability,
           resolver: res.source,
           raw,
+          parsed: parsedData,
           latencies,
           error: undefined,
         });
@@ -315,7 +340,7 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
       }
       pending--;
       if (pending === 0 && !controller.signal.aborted) {
-        finish({ domain: name, availability: 'unknown', resolver: 'app', raw, latencies, error: finalError });
+        finish({ domain: name, availability: 'unknown', resolver: 'app', raw, parsed: parsedData, latencies, error: finalError });
       }
     };
 
@@ -384,7 +409,7 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
     }
 
     if (pending === 0) {
-      finish({ domain: name, availability: 'unknown', resolver: 'app', raw, latencies, error: finalError });
+      finish({ domain: name, availability: 'unknown', resolver: 'app', raw, parsed: parsedData, latencies, error: finalError });
     }
   });
 }

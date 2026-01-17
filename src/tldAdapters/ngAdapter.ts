@@ -15,7 +15,7 @@ export class NgAdapter extends BaseCheckerAdapter {
     const res = await fetch(`https://whois.nic.net.ng/domains?name=${domain}&exactMatch=true`, { signal });
     const data = await res.json();
     const exists = Array.isArray(data.domainSearchResults) && data.domainSearchResults.length > 0;
-    return { exists, raw: data };
+    return { exists, raw: data.domainSearchResults[0] };
   }
 
   protected async doCheck(domainObj: ParsedDomain, opts: { signal?: AbortSignal } = {}): Promise<AdapterResponse> {

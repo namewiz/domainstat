@@ -15,6 +15,7 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
       availability: 'invalid',
       resolver: 'validator',
       raw: { validator: null },
+      parsed: {},
       latencies: { validator: 0 },
       error: {
         code: 'PARSE_ERROR',
@@ -32,6 +33,7 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
       availability: 'unsupported',
       resolver: 'validator',
       raw: { validator: null },
+      parsed: {},
       latencies: { validator: 0 },
       error: {
         code: 'UNSUPPORTED_TLD',
@@ -49,6 +51,7 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
       availability: 'unsupported',
       resolver: 'validator',
       raw: { validator: null },
+      parsed: {},
       latencies: { validator: 0 },
       error: {
         code: 'UNSUPPORTED_TLD',
@@ -63,6 +66,7 @@ export function validateDomain(parsed: ParsedDomain, originalDomain: string): Do
     availability: 'unknown',
     resolver: 'validator',
     raw: { validator: null },
+    parsed: {},
     latencies: { validator: 0 },
   };
 }

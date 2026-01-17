@@ -45,6 +45,10 @@ export interface DomainStatus {
    */
   raw: Record<string, any>;
   /**
+   * Parsed responses from each adapter keyed by its namespace.
+   */
+  parsed: Record<string, any>;
+  /**
    * Latency (in ms) reported by each adapter keyed by its namespace.
    */
   latencies: Record<string, number>;
