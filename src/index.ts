@@ -1,13 +1,19 @@
-import { parse } from 'tldts';
-import { AltStatusAdapter } from './adapters/altStatusAdapter';
-import { DohAdapter } from './adapters/dohAdapter';
-import { RdapAdapter } from './adapters/rdapAdapter';
-import { WhoisApiAdapter } from './adapters/whoisApiAdapter';
-import { parseRdapToWhois } from './rdap-parser';
-import { getTldAdapter } from './tldAdapters';
-import { AdapterError, AdapterResponse, AdapterSource, CheckOptions, DomainStatus } from './types';
-import { validateDomain } from './validator';
-export type { DomainStatus } from './types';
+import { parse } from "tldts";
+import { AltStatusAdapter } from "./adapters/altStatusAdapter";
+import { DohAdapter } from "./adapters/dohAdapter";
+import { RdapAdapter } from "./adapters/rdapAdapter";
+import { WhoisApiAdapter } from "./adapters/whoisApiAdapter";
+import { parseRdapToWhois } from "./rdap-parser";
+import { getTldAdapter } from "./tldAdapters";
+import {
+  AdapterError,
+  AdapterResponse,
+  AdapterSource,
+  CheckOptions,
+  DomainStatus,
+} from "./types";
+import { validateDomain } from "./validator";
+export type { DomainStatus } from "./types";
 
 const MAX_CONCURRENCY = 10;
 const doh = new DohAdapter();
@@ -18,8 +24,8 @@ type ResultCache = {
   set(domain: string, value: DomainStatus): Promise<void>;
 };
 
-const CACHE_NAME = 'domainstat:response-cache';
-const CACHE_URL_PREFIX = 'https://domainstat.local/cache/';
+const CACHE_NAME = "domainstat:response-cache";
+const CACHE_URL_PREFIX = "https://domainstat.local/cache/";
 
 function createMemoryCache(): ResultCache {
   const store = new Map<string, DomainStatus>();
@@ -47,7 +53,8 @@ function createBrowserCache(scope: any): ResultCache {
       throw err;
     }
   };
-  const buildRequest = (domain: string) => new scope.Request(`${CACHE_URL_PREFIX}${encodeURIComponent(domain)}`);
+  const buildRequest = (domain: string) =>
+    new scope.Request(`${CACHE_URL_PREFIX}${encodeURIComponent(domain)}`);
   return {
     async get(domain: string) {
       try {
@@ -66,7 +73,7 @@ function createBrowserCache(scope: any): ResultCache {
       try {
         const cache = await getCache();
         const response = new scope.Response(JSON.stringify(value), {
-          headers: { 'content-type': 'application/json' },
+          headers: { "content-type": "application/json" },
         });
         await cache.put(buildRequest(domain), response);
       } catch {
@@ -78,11 +85,13 @@ function createBrowserCache(scope: any): ResultCache {
 }
 
 function createResponseCache(): ResultCache {
-  const scope: any = typeof globalThis !== 'undefined' ? globalThis : {};
-  const isBrowser = typeof scope.window !== 'undefined' && scope.window === scope;
-  const hasCacheStorage = isBrowser && scope.caches && typeof scope.caches.open === 'function';
-  const hasRequest = typeof scope.Request === 'function';
-  const hasResponse = typeof scope.Response === 'function';
+  const scope: any = typeof globalThis !== "undefined" ? globalThis : {};
+  const isBrowser =
+    typeof scope.window !== "undefined" && scope.window === scope;
+  const hasCacheStorage =
+    isBrowser && scope.caches && typeof scope.caches.open === "function";
+  const hasRequest = typeof scope.Request === "function";
+  const hasResponse = typeof scope.Response === "function";
   if (hasCacheStorage && hasRequest && hasResponse) {
     return createBrowserCache(scope);
   }
@@ -90,7 +99,7 @@ function createResponseCache(): ResultCache {
 }
 
 const responseCache: ResultCache = createResponseCache();
-const noopLogger: Pick<Console, 'info' | 'warn' | 'error'> = {
+const noopLogger: Pick<Console, "info" | "warn" | "error"> = {
   info: () => { },
   warn: () => { },
   error: () => { },
@@ -112,27 +121,37 @@ function normalizeDomains(domains: string[]): string[] {
 
 // Default per-adapter execution timeouts (in ms)
 const defaultTimeoutConfig: Partial<Record<AdapterSource, number>> = {
-  'whois.api': 3000,
+  "whois.api": 3000,
 };
 
-function getAdapterTimeout(ns: AdapterSource, opts: CheckOptions): number | undefined {
+function getAdapterTimeout(
+  ns: AdapterSource,
+  opts: CheckOptions,
+): number | undefined {
   return opts.timeoutConfig?.[ns] ?? defaultTimeoutConfig[ns];
 }
 
-export async function checkSerial(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
-  const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose ? (opts.logger ?? console) : noopLogger;
-  logger.info('domain.check.start', { domain });
+export async function checkSerial(
+  domain: string,
+  opts: CheckOptions = {},
+): Promise<DomainStatus> {
+  const logger: Pick<Console, "info" | "warn" | "error"> = opts.verbose
+    ? (opts.logger ?? console)
+    : noopLogger;
+  logger.info("domain.check.start", { domain });
   const raw: Record<string, any> = {};
   const parsedData: Record<string, any> = {};
   const latencies: Record<string, number> = {};
   const parsed = parse(domain.trim().toLowerCase());
   const validated = validateDomain(parsed, domain);
   if (validated.error) {
-    logger.error(`validation error for domain '${domain}', error: ${validated.error.message}`);
-    logger.info('domain.check.end', {
+    logger.error(
+      `validation error for domain '${domain}', error: ${validated.error.message}`,
+    );
+    logger.info("domain.check.end", {
       domain: validated.domain,
       status: validated.availability,
-      resolver: 'validator',
+      resolver: "validator",
       error: validated.error.message,
     });
     return validated;
@@ -141,11 +160,16 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   const tldAdapter = getTldAdapter(parsed.publicSuffix ?? undefined);
 
   const altStatus = new AltStatusAdapter(opts.apiKeys?.domainr);
-  const whoisApi = new WhoisApiAdapter(opts.apiKeys?.whoisfreaks, opts.apiKeys?.whoisxml);
+  const whoisApi = new WhoisApiAdapter(
+    opts.apiKeys?.whoisfreaks,
+    opts.apiKeys?.whoisxml,
+  );
 
   const controller = new AbortController();
   const signal = controller.signal;
-  const done = new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve()));
+  const done = new Promise<void>((resolve) =>
+    signal.addEventListener("abort", () => resolve()),
+  );
 
   let finalError: AdapterError | undefined;
   let result: DomainStatus | null = null;
@@ -156,34 +180,55 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
     latencies[res.source] = res.latency ?? 0;
 
     // Parse RDAP responses
-    if ((res.source === 'rdap' || res.source === 'rdap.ng') && res.raw && !res.error) {
+    if (
+      (res.source === "rdap" || res.source === "rdap.ng") &&
+      res.raw &&
+      !res.error
+    ) {
       try {
         parsedData[res.source] = parseRdapToWhois(res.raw);
       } catch (err) {
-        logger.warn(`${res.source}.parse_failed`, { domain: name, error: err instanceof Error ? err.message : String(err) });
+        logger.warn(`${res.source}.parse_failed`, {
+          domain: name,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
 
-    if (!signal.aborted && !res.error && res.availability !== 'unknown') {
+    if (!signal.aborted && !res.error && res.availability !== "unknown") {
       controller.abort();
-      result = { domain: name, availability: res.availability, resolver: res.source, raw, parsed: parsedData, latencies, error: undefined };
+      result = {
+        domain: name,
+        availability: res.availability,
+        resolver: res.source,
+        raw,
+        parsed: parsedData,
+        latencies,
+        error: undefined,
+      };
       return;
     }
     if (res.error) {
-      logger.warn(`${res.source}.failed`, { domain: name, error: res.error.message });
+      logger.warn(`${res.source}.failed`, {
+        domain: name,
+        error: res.error.message,
+      });
       finalError = res.error;
     }
   };
 
   const launch = (adapter: any, options: any) => {
     // Compose a signal that aborts either when the global signal aborts or when timeout elapses
-    const timeoutMs = getAdapterTimeout(adapter.namespace as AdapterSource, opts);
+    const timeoutMs = getAdapterTimeout(
+      adapter.namespace as AdapterSource,
+      opts,
+    );
     let controller: AbortController | undefined;
     let timer: any;
     let onAbort: (() => void) | undefined;
     const baseSignal: AbortSignal | undefined = options?.signal;
     const finalOptions = { ...options };
-    if (typeof timeoutMs === 'number') {
+    if (typeof timeoutMs === "number") {
       controller = new AbortController();
       // If the outer/global signal aborts, propagate
       if (baseSignal) {
@@ -191,7 +236,7 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
           controller.abort();
         } else {
           onAbort = () => controller && controller.abort();
-          baseSignal.addEventListener('abort', onAbort);
+          baseSignal.addEventListener("abort", onAbort);
         }
       }
       timer = setTimeout(() => controller && controller.abort(), timeoutMs);
@@ -204,11 +249,11 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
       .catch((err: any) => {
         handleResponse({
           domain: name,
-          availability: 'unknown',
+          availability: "unknown",
           source: adapter.namespace,
           raw: null,
           error: {
-            code: err?.code || 'ADAPTER_ERROR',
+            code: err?.code || "ADAPTER_ERROR",
             message: err?.message || String(err),
             retryable: true,
           },
@@ -216,13 +261,15 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
       })
       .finally(() => {
         if (timer) clearTimeout(timer);
-        if (onAbort && options?.signal) options.signal.removeEventListener('abort', onAbort);
+        if (onAbort && options?.signal)
+          options.signal.removeEventListener("abort", onAbort);
       });
     running.push(p);
   };
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-  const getAllottedLatency = (ns: AdapterSource) => opts.allottedLatency?.[ns] ?? 200;
+  const getAllottedLatency = (ns: AdapterSource) =>
+    opts.allottedLatency?.[ns] ?? 200;
 
   const sequence: Array<{ adapter: any; options: any }> = [];
   const dnsAdapter = tldAdapter?.dns ?? doh;
@@ -230,8 +277,14 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
     sequence.push({ adapter: dnsAdapter, options: { signal } });
   }
   const rdapAdapter = tldAdapter?.rdap ?? rdap;
-  if (!opts.tldConfig?.skipRdap && adapterAllowed(rdapAdapter.namespace, opts)) {
-    sequence.push({ adapter: rdapAdapter, options: { tldConfig: opts.tldConfig, signal } });
+  if (
+    !opts.tldConfig?.skipRdap &&
+    adapterAllowed(rdapAdapter.namespace, opts)
+  ) {
+    sequence.push({
+      adapter: rdapAdapter,
+      options: { tldConfig: opts.tldConfig, signal },
+    });
   }
   if (adapterAllowed(altStatus.namespace, opts)) {
     sequence.push({ adapter: altStatus, options: { signal } });
@@ -244,7 +297,10 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   for (const item of sequence) {
     if (signal.aborted) break;
     launch(item.adapter, item.options);
-    await Promise.race([sleep(getAllottedLatency(item.adapter.namespace as AdapterSource)), done]);
+    await Promise.race([
+      sleep(getAllottedLatency(item.adapter.namespace as AdapterSource)),
+      done,
+    ]);
   }
 
   if (!signal.aborted) {
@@ -253,14 +309,14 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
 
   const finalResult: DomainStatus = result ?? {
     domain: name,
-    availability: 'unknown' as const,
-    resolver: 'app' as const,
+    availability: "unknown" as const,
+    resolver: "app" as const,
     raw,
     parsed: parsedData,
     latencies,
     error: finalError,
   };
-  logger.info('domain.check.end', {
+  logger.info("domain.check.end", {
     domain: name,
     status: finalResult.availability,
     resolver: finalResult.resolver,
@@ -268,20 +324,27 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
   return finalResult;
 }
 
-export async function checkParallel(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
-  const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose ? (opts.logger ?? console) : noopLogger;
-  logger.info('domain.check.start', { domain });
+export async function checkParallel(
+  domain: string,
+  opts: CheckOptions = {},
+): Promise<DomainStatus> {
+  const logger: Pick<Console, "info" | "warn" | "error"> = opts.verbose
+    ? (opts.logger ?? console)
+    : noopLogger;
+  logger.info("domain.check.start", { domain });
   const raw: Record<string, any> = {};
   const parsedData: Record<string, any> = {};
   const latencies: Record<string, number> = {};
   const parsed = parse(domain.trim().toLowerCase());
   const validated = validateDomain(parsed, domain);
   if (validated.error || !parsed.publicSuffix) {
-    logger.error(`validation error for domain '${domain}', error: ${validated.error?.message}`);
-    logger.info('domain.check.end', {
+    logger.error(
+      `validation error for domain '${domain}', error: ${validated.error?.message}`,
+    );
+    logger.info("domain.check.end", {
       domain: validated.domain,
       status: validated.availability,
-      resolver: 'validator',
+      resolver: "validator",
       error: validated.error?.message,
     });
     return validated;
@@ -290,7 +353,10 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
   const tldAdapter = getTldAdapter(parsed.publicSuffix);
 
   const altStatus = new AltStatusAdapter(opts.apiKeys?.domainr);
-  const whoisApi = new WhoisApiAdapter(opts.apiKeys?.whoisfreaks, opts.apiKeys?.whoisxml);
+  const whoisApi = new WhoisApiAdapter(
+    opts.apiKeys?.whoisfreaks,
+    opts.apiKeys?.whoisxml,
+  );
 
   const controller = new AbortController();
   const signal = controller.signal;
@@ -300,7 +366,7 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
     let pending = 0;
 
     const finish = (result: DomainStatus) => {
-      logger.info('domain.check.end', {
+      logger.info("domain.check.end", {
         domain: name,
         status: result.availability,
         resolver: result.resolver,
@@ -313,15 +379,26 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
       latencies[res.source] = res.latency ?? 0;
 
       // Parse RDAP responses
-      if ((res.source === 'rdap' || res.source === 'rdap.ng') && res.raw && !res.error) {
+      if (
+        (res.source === "rdap" || res.source === "rdap.ng") &&
+        res.raw &&
+        !res.error
+      ) {
         try {
           parsedData[res.source] = parseRdapToWhois(res.raw);
         } catch (err) {
-          logger.warn(`${res.source}.parse_failed`, { domain: name, error: err instanceof Error ? err.message : String(err) });
+          logger.warn(`${res.source}.parse_failed`, {
+            domain: name,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
 
-      if (!controller.signal.aborted && !res.error && res.availability !== 'unknown') {
+      if (
+        !controller.signal.aborted &&
+        !res.error &&
+        res.availability !== "unknown"
+      ) {
         controller.abort();
         finish({
           domain: name,
@@ -335,31 +412,45 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
         return;
       }
       if (res.error) {
-        logger.warn(`${res.source}.failed`, { domain: name, error: res.error.message });
+        logger.warn(`${res.source}.failed`, {
+          domain: name,
+          error: res.error.message,
+        });
         finalError = res.error;
       }
       pending--;
       if (pending === 0 && !controller.signal.aborted) {
-        finish({ domain: name, availability: 'unknown', resolver: 'app', raw, parsed: parsedData, latencies, error: finalError });
+        finish({
+          domain: name,
+          availability: "unknown",
+          resolver: "app",
+          raw,
+          parsed: parsedData,
+          latencies,
+          error: finalError,
+        });
       }
     };
 
     const launch = (adapter: any, options: any) => {
       // Compose a signal that aborts either when the global signal aborts or when timeout elapses
-      const timeoutMs = getAdapterTimeout(adapter.namespace as AdapterSource, opts);
+      const timeoutMs = getAdapterTimeout(
+        adapter.namespace as AdapterSource,
+        opts,
+      );
       let controller: AbortController | undefined;
       let timer: any;
       let onAbort: (() => void) | undefined;
       const baseSignal: AbortSignal | undefined = options?.signal ?? signal;
       const finalOptions = { ...options };
-      if (typeof timeoutMs === 'number') {
+      if (typeof timeoutMs === "number") {
         controller = new AbortController();
         if (baseSignal) {
           if (baseSignal.aborted) {
             controller.abort();
           } else {
             onAbort = () => controller && controller.abort();
-            baseSignal.addEventListener('abort', onAbort);
+            baseSignal.addEventListener("abort", onAbort);
           }
         }
         timer = setTimeout(() => controller && controller.abort(), timeoutMs);
@@ -373,11 +464,11 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
         .catch((err: any) => {
           handleResponse({
             domain: name,
-            availability: 'unknown',
+            availability: "unknown",
             source: adapter.namespace,
             raw: null,
             error: {
-              code: err?.code || 'ADAPTER_ERROR',
+              code: err?.code || "ADAPTER_ERROR",
               message: err?.message || String(err),
               retryable: true,
             },
@@ -385,7 +476,8 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
         })
         .finally(() => {
           if (timer) clearTimeout(timer);
-          if (onAbort && baseSignal) baseSignal.removeEventListener('abort', onAbort);
+          if (onAbort && baseSignal)
+            baseSignal.removeEventListener("abort", onAbort);
         });
     };
 
@@ -395,7 +487,10 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
     }
 
     const rdapAdapter = tldAdapter?.rdap ?? rdap;
-    if (!opts.tldConfig?.skipRdap && adapterAllowed(rdapAdapter.namespace, opts)) {
+    if (
+      !opts.tldConfig?.skipRdap &&
+      adapterAllowed(rdapAdapter.namespace, opts)
+    ) {
       launch(rdapAdapter, { tldConfig: opts.tldConfig, signal });
     }
 
@@ -409,12 +504,23 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
     }
 
     if (pending === 0) {
-      finish({ domain: name, availability: 'unknown', resolver: 'app', raw, parsed: parsedData, latencies, error: finalError });
+      finish({
+        domain: name,
+        availability: "unknown",
+        resolver: "app",
+        raw,
+        parsed: parsedData,
+        latencies,
+        error: finalError,
+      });
     }
   });
 }
 
-export async function check(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
+export async function check(
+  domain: string,
+  opts: CheckOptions = {},
+): Promise<DomainStatus> {
   const normalized = domain.trim().toLowerCase();
   const cacheEnabled = opts.cache !== false;
   if (cacheEnabled) {
@@ -423,24 +529,35 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
       return cached;
     }
   }
-  const result = opts.burstMode ? await checkParallel(normalized, opts) : await checkSerial(normalized, opts);
+  const result = opts.burstMode
+    ? await checkParallel(normalized, opts)
+    : await checkSerial(normalized, opts);
   if (cacheEnabled && (!result.error || result.error.retryable === false)) {
     await responseCache.set(normalized, result);
   }
   return result;
 }
 
-export async function* checkBatchStream(domains: string[], opts: CheckOptions = {}): AsyncGenerator<DomainStatus> {
+export async function* checkBatchStream(
+  domains: string[],
+  opts: CheckOptions = {},
+): AsyncGenerator<DomainStatus> {
   const queue = [...normalizeDomains(domains)];
   const concurrency = opts.concurrency ?? MAX_CONCURRENCY;
-  const active: Array<{ id: number; promise: Promise<{ id: number; res: DomainStatus }> }> = [];
+  const active: Array<{
+    id: number;
+    promise: Promise<{ id: number; res: DomainStatus }>;
+  }> = [];
   let idCounter = 0;
 
   const enqueue = () => {
     if (!queue.length) return;
     const domain = queue.shift()!;
     const id = idCounter++;
-    const promise = check(domain, opts).then((res) => ({ id, res: { ...res, domain } }));
+    const promise = check(domain, opts).then((res) => ({
+      id,
+      res: { ...res, domain },
+    }));
     active.push({ id, promise });
   };
 
@@ -459,7 +576,10 @@ export async function* checkBatchStream(domains: string[], opts: CheckOptions = 
   }
 }
 
-export async function checkBatch(domains: string[], opts: CheckOptions = {}): Promise<DomainStatus[]> {
+export async function checkBatch(
+  domains: string[],
+  opts: CheckOptions = {},
+): Promise<DomainStatus[]> {
   const results: DomainStatus[] = [];
 
   for await (const res of checkBatchStream(domains, opts)) {
