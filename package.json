@@ -1,12 +1,13 @@
 {
   "name": "domainstat",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Extremely fast domain status checker library using DoH, RDAP and WHOIS API.",
   "type": "module",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "npm run build:lib && npm run build:cli",
-    "build:lib": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral",
+    "build:lib": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral && tsc --emitDeclarationOnly",
     "build:cli": "npx -y esbuild src/cli.ts --bundle --minify --format=esm --target=node20 --outfile=dist/cli.js --platform=node",
     "test": "npm run build && node --test",
     "start": "npm run build && cp dist/index.js demo/index.js && npx serve demo"
@@ -28,18 +29,21 @@
     "whois"
   ],
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "bin": {
     "domainstat": "./dist/cli.js"
   },
   "license": "MIT",
   "engines": {
-    "node": "^22.12.0",
-    "npm": "^10.9.0"
+    "node": "^24.12.0",
+    "npm": "^11.6.2"
   },
   "dependencies": {
-    "tldts": "^7.0.10"
+    "tldts": "^7.0.19"
   },
   "devDependencies": {}
 }

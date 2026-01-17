@@ -251,10 +251,10 @@ export async function checkSerial(domain: string, opts: CheckOptions = {}): Prom
     await Promise.all(running);
   }
 
-  const finalResult = result ?? {
+  const finalResult: DomainStatus = result ?? {
     domain: name,
-    availability: 'unknown',
-    resolver: 'app',
+    availability: 'unknown' as const,
+    resolver: 'app' as const,
     raw,
     parsed: parsedData,
     latencies,
@@ -276,13 +276,13 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
   const latencies: Record<string, number> = {};
   const parsed = parse(domain.trim().toLowerCase());
   const validated = validateDomain(parsed, domain);
-  if (validated.error) {
-    logger.error(`validation error for domain '${domain}', error: ${validated.error.message}`);
+  if (validated.error || !parsed.publicSuffix) {
+    logger.error(`validation error for domain '${domain}', error: ${validated.error?.message}`);
     logger.info('domain.check.end', {
       domain: validated.domain,
       status: validated.availability,
       resolver: 'validator',
-      error: validated.error.message,
+      error: validated.error?.message,
     });
     return validated;
   }
