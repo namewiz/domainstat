@@ -1,6 +1,6 @@
 {
   "name": "domainstat",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Extremely fast domain status checker library using DoH, RDAP and WHOIS API.",
   "type": "module",
   "main": "./dist/index.js",
