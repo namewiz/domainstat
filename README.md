@@ -106,7 +106,7 @@ finishes.
 | cache?           | `boolean`                                                       | Enable or disable caching (default `true`).                                                  |
 | apiKeys?         | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services.                                                           |
 | burstMode?       | `boolean`                                                       | When true, use `checkParallel` to query all adapters simultaneously.                         |
-| allottedLatency? | `Partial<Record<AdapterSource, number>>`                        | Per‑adapter latency before launching the next in serial mode; defaults to `200ms` per entry. |
+| staggerDelay?    | `Partial<Record<AdapterSource, number>>`                        | Per‑adapter delay before launching the next in serial mode; defaults to `200ms` per entry.   |
 | timeoutConfig?   | `Partial<Record<AdapterSource, number>>`                        | Maximum execution time per adapter in milliseconds.                                          |
 
 Logging is disabled unless `verbose` is set. Set `cache: false` to disable caching.
@@ -176,7 +176,7 @@ Key options include:
   needed.
 - `--skip-rdap`, `--rdap-server <url>` – tweak RDAP behaviour.
 - `--timeout adapter=ms` – abort specific adapters after the given time.
-- `--allotted-latency adapter=ms` – adjust serial launch delays.
+- `--stagger-delay adapter=ms` – adjust serial launch delays.
 
 The CLI reads API keys from the environment variables
 `DOMAINSTAT_DOMAINR_KEY`, `DOMAINSTAT_WHOISFREAKS_KEY` and

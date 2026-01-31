@@ -95,10 +95,11 @@ export interface CheckOptions {
   /** When true, run adapters in parallel */
   burstMode?: boolean;
   /**
-   * Allotted latency before launching the next adapter in serial mode, keyed by adapter namespace.
+   * Delay before launching the next adapter in serial mode, keyed by adapter namespace.
+   * Allows staggering requests so earlier adapters get a head start before others begin.
    * Defaults to 200ms when not specified for an adapter.
    */
-  allottedLatency?: Partial<Record<AdapterSource, number>>;
+  staggerDelay?: Partial<Record<AdapterSource, number>>;
   /**
    * Maximum execution time per adapter in milliseconds. When exceeded, the adapter is aborted.
    * Provide values keyed by adapter namespace. If not specified, defaults may apply.

@@ -16,6 +16,7 @@ import { validateDomain } from "./validator";
 export type { DomainStatus } from "./types";
 
 const MAX_CONCURRENCY = 10;
+const DEFAULT_STAGGER_DELAY = 200;
 const doh = new DohAdapter();
 const rdap = new RdapAdapter();
 
@@ -268,8 +269,8 @@ export async function checkSerial(
   };
 
   const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-  const getAllottedLatency = (ns: AdapterSource) =>
-    opts.allottedLatency?.[ns] ?? 200;
+  const getStaggerDelay = (ns: AdapterSource) =>
+    opts.staggerDelay?.[ns] ?? DEFAULT_STAGGER_DELAY;
 
   const sequence: Array<{ adapter: any; options: any }> = [];
   const dnsAdapter = tldAdapter?.dns ?? doh;
@@ -298,7 +299,7 @@ export async function checkSerial(
     if (signal.aborted) break;
     launch(item.adapter, item.options);
     await Promise.race([
-      sleep(getAllottedLatency(item.adapter.namespace as AdapterSource)),
+      sleep(getStaggerDelay(item.adapter.namespace as AdapterSource)),
       done,
     ]);
   }

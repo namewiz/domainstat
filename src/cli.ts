@@ -127,7 +127,7 @@ function parseArgs(argv: string[]): ParsedCliArgs {
   let showHelp = false;
   let showVersion = false;
   let tldConfig: CheckOptions['tldConfig'];
-  let allottedLatency: CheckOptions['allottedLatency'];
+  let staggerDelay: CheckOptions['staggerDelay'];
   let timeoutConfig: CheckOptions['timeoutConfig'];
   let apiKeys: NonNullable<CheckOptions['apiKeys']> | undefined;
 
@@ -257,9 +257,9 @@ function parseArgs(argv: string[]): ParsedCliArgs {
       continue;
     }
 
-    if (flag === '--allotted-latency') {
+    if (flag === '--stagger-delay') {
       const { value, nextIndex } = readValue(argv, index, inlineValue, flag);
-      allottedLatency = mergeNumberMaps(allottedLatency, parseNumberMap(flag, value));
+      staggerDelay = mergeNumberMaps(staggerDelay, parseNumberMap(flag, value));
       index = nextIndex;
       continue;
     }
@@ -288,8 +288,8 @@ function parseArgs(argv: string[]): ParsedCliArgs {
   if (tldConfig) {
     options.tldConfig = tldConfig;
   }
-  if (allottedLatency) {
-    options.allottedLatency = allottedLatency;
+  if (staggerDelay) {
+    options.staggerDelay = staggerDelay;
   }
   if (timeoutConfig) {
     options.timeoutConfig = timeoutConfig;
@@ -361,7 +361,7 @@ function printHelp(stream: NodeJS.WritableStream = process.stdout): void {
       '      --rdap-server <url>    Override the RDAP server URL\n' +
       '      --skip-rdap            Skip RDAP lookups\n' +
       '      --timeout a=ms,...     Abort adapters after the given milliseconds\n' +
-      '      --allotted-latency a=ms,...  Delay before launching the next adapter in serial mode\n' +
+      '      --stagger-delay a=ms,...     Delay before launching the next adapter in serial mode\n' +
       '\nEnvironment variables:\n' +
       '  DOMAINSTAT_DOMAINR_KEY, DOMAINSTAT_WHOISFREAKS_KEY, DOMAINSTAT_WHOISXML_KEY\n' +
       '  provide default API keys when the corresponding flags are omitted.\n',
