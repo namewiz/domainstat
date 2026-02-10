@@ -139,7 +139,7 @@ export async function checkSerial(
   const logger: Pick<Console, "info" | "warn" | "error"> = opts.verbose
     ? (opts.logger ?? console)
     : noopLogger;
-  logger.info("domain.check.start", { domain });
+  logger.info(`[checkSerial] start domain=${domain}`);
   const raw: Record<string, any> = {};
   const parsedData: Record<string, any> = {};
   const latencies: Record<string, number> = {};
@@ -147,14 +147,8 @@ export async function checkSerial(
   const validated = validateDomain(parsed, domain);
   if (validated.error) {
     logger.error(
-      `validation error for domain '${domain}', error: ${validated.error.message}`,
+      `[checkSerial] validation error for domain '${domain}': ${validated.error.message}`,
     );
-    logger.info("domain.check.end", {
-      domain: validated.domain,
-      status: validated.availability,
-      resolver: "validator",
-      error: validated.error.message,
-    });
     return validated;
   }
   const name = parsed.domain!;
@@ -179,6 +173,9 @@ export async function checkSerial(
   const handleResponse = (res: AdapterResponse) => {
     raw[res.source] = res.raw;
     latencies[res.source] = res.latency ?? 0;
+    logger.info(
+      `[checkSerial] adapter=${res.source} domain=${name} availability=${res.availability} latency=${res.latency ?? 0}ms error=${res.error?.message ?? "none"}`,
+    );
 
     // Parse RDAP responses
     if (
@@ -189,15 +186,13 @@ export async function checkSerial(
       try {
         parsedData[res.source] = parseRdapToWhois(res.raw);
       } catch (err) {
-        logger.warn(`${res.source}.parse_failed`, {
-          domain: name,
-          error: err instanceof Error ? err.message : String(err),
-        });
+        logger.warn(`[checkSerial] ${res.source} parse failed for ${name}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 
     if (!signal.aborted && !res.error && res.availability !== "unknown") {
       controller.abort();
+      logger.info(`[checkSerial] resolved domain=${name} availability=${res.availability} resolver=${res.source}`);
       result = {
         domain: name,
         availability: res.availability,
@@ -210,10 +205,6 @@ export async function checkSerial(
       return;
     }
     if (res.error) {
-      logger.warn(`${res.source}.failed`, {
-        domain: name,
-        error: res.error.message,
-      });
       finalError = res.error;
     }
   };
@@ -295,8 +286,11 @@ export async function checkSerial(
     sequence.push({ adapter: whoisAdapter, options: { signal } });
   }
 
+  logger.info(`[checkSerial] adapters=[${sequence.map((s) => s.adapter.namespace).join(", ")}]`);
+
   for (const item of sequence) {
     if (signal.aborted) break;
+    logger.info(`[checkSerial] launching adapter=${item.adapter.namespace} domain=${name}`);
     launch(item.adapter, item.options);
     await Promise.race([
       sleep(getStaggerDelay(item.adapter.namespace as AdapterSource)),
@@ -317,11 +311,9 @@ export async function checkSerial(
     latencies,
     error: finalError,
   };
-  logger.info("domain.check.end", {
-    domain: name,
-    status: finalResult.availability,
-    resolver: finalResult.resolver,
-  });
+  logger.info(
+    `[checkSerial] end domain=${name} availability=${finalResult.availability} resolver=${finalResult.resolver}`,
+  );
   return finalResult;
 }
 
@@ -332,7 +324,7 @@ export async function checkParallel(
   const logger: Pick<Console, "info" | "warn" | "error"> = opts.verbose
     ? (opts.logger ?? console)
     : noopLogger;
-  logger.info("domain.check.start", { domain });
+  logger.info(`[checkParallel] start domain=${domain}`);
   const raw: Record<string, any> = {};
   const parsedData: Record<string, any> = {};
   const latencies: Record<string, number> = {};
@@ -340,14 +332,8 @@ export async function checkParallel(
   const validated = validateDomain(parsed, domain);
   if (validated.error || !parsed.publicSuffix) {
     logger.error(
-      `validation error for domain '${domain}', error: ${validated.error?.message}`,
+      `[checkParallel] validation error for domain '${domain}': ${validated.error?.message}`,
     );
-    logger.info("domain.check.end", {
-      domain: validated.domain,
-      status: validated.availability,
-      resolver: "validator",
-      error: validated.error?.message,
-    });
     return validated;
   }
   const name = parsed.domain!;
@@ -367,17 +353,18 @@ export async function checkParallel(
     let pending = 0;
 
     const finish = (result: DomainStatus) => {
-      logger.info("domain.check.end", {
-        domain: name,
-        status: result.availability,
-        resolver: result.resolver,
-      });
+      logger.info(
+        `[checkParallel] end domain=${name} availability=${result.availability} resolver=${result.resolver}`,
+      );
       resolve(result);
     };
 
     const handleResponse = (res: AdapterResponse) => {
       raw[res.source] = res.raw;
       latencies[res.source] = res.latency ?? 0;
+      logger.info(
+        `[checkParallel] adapter=${res.source} domain=${name} availability=${res.availability} latency=${res.latency ?? 0}ms error=${res.error?.message ?? "none"}`,
+      );
 
       // Parse RDAP responses
       if (
@@ -388,10 +375,7 @@ export async function checkParallel(
         try {
           parsedData[res.source] = parseRdapToWhois(res.raw);
         } catch (err) {
-          logger.warn(`${res.source}.parse_failed`, {
-            domain: name,
-            error: err instanceof Error ? err.message : String(err),
-          });
+          logger.warn(`[checkParallel] ${res.source} parse failed for ${name}: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
 
@@ -401,6 +385,7 @@ export async function checkParallel(
         res.availability !== "unknown"
       ) {
         controller.abort();
+        logger.info(`[checkParallel] resolved domain=${name} availability=${res.availability} resolver=${res.source}`);
         finish({
           domain: name,
           availability: res.availability,
@@ -413,10 +398,6 @@ export async function checkParallel(
         return;
       }
       if (res.error) {
-        logger.warn(`${res.source}.failed`, {
-          domain: name,
-          error: res.error.message,
-        });
         finalError = res.error;
       }
       pending--;
@@ -482,8 +463,10 @@ export async function checkParallel(
         });
     };
 
+    const adapters: string[] = [];
     const dnsAdapter = tldAdapter?.dns ?? doh;
     if (adapterAllowed(dnsAdapter.namespace, opts)) {
+      adapters.push(dnsAdapter.namespace);
       launch(dnsAdapter, { signal });
     }
 
@@ -492,17 +475,22 @@ export async function checkParallel(
       !opts.tldConfig?.skipRdap &&
       adapterAllowed(rdapAdapter.namespace, opts)
     ) {
+      adapters.push(rdapAdapter.namespace);
       launch(rdapAdapter, { tldConfig: opts.tldConfig, signal });
     }
 
     if (adapterAllowed(altStatus.namespace, opts)) {
+      adapters.push(altStatus.namespace);
       launch(altStatus, { signal });
     }
 
     const whoisAdapter = tldAdapter?.whois ?? whoisApi;
     if (adapterAllowed(whoisAdapter.namespace, opts)) {
+      adapters.push(whoisAdapter.namespace);
       launch(whoisAdapter, { signal });
     }
+
+    logger.info(`[checkParallel] launched adapters=[${adapters.join(", ")}] domain=${name}`);
 
     if (pending === 0) {
       finish({
@@ -522,14 +510,23 @@ export async function check(
   domain: string,
   opts: CheckOptions = {},
 ): Promise<DomainStatus> {
+  const logger: Pick<Console, "info" | "warn" | "error"> = opts.verbose
+    ? (opts.logger ?? console)
+    : noopLogger;
   const normalized = domain.trim().toLowerCase();
   const cacheEnabled = opts.cache !== false;
   if (cacheEnabled) {
     const cached = await responseCache.get(normalized);
     if (cached && adapterAllowed(cached.resolver, opts)) {
+      logger.info(
+        `[check] cache hit domain=${normalized} availability=${cached.availability} resolver=${cached.resolver}`,
+      );
       return cached;
     }
   }
+  logger.info(
+    `[check] domain=${normalized} mode=${opts.burstMode ? "parallel" : "serial"} cache=${cacheEnabled}`,
+  );
   const result = opts.burstMode
     ? await checkParallel(normalized, opts)
     : await checkSerial(normalized, opts);
