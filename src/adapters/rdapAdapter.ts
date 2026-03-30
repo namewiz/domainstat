@@ -17,6 +17,7 @@ export class RdapAdapter extends BaseCheckerAdapter {
     try {
       const res = await fetch(`${baseUrl}${domain}`, {
         signal: opts.signal,
+        referrerPolicy: 'no-referrer',
       });
       const text = await res.text();
       if (res.status === 404) {

@@ -18,6 +18,7 @@ export class DohAdapter extends BaseCheckerAdapter {
       const res = await fetch(`${this.url}?${params.toString()}`, {
         headers: { accept: 'application/dns-json' },
         signal: opts.signal,
+        referrerPolicy: 'no-referrer',
       });
       if (!res.ok) {
         const retryable = res.status === 429 || res.status >= 500;

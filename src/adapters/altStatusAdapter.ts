@@ -11,7 +11,7 @@ export class AltStatusAdapter extends BaseCheckerAdapter {
   private async fetchDomainr(domain: string, signal?: AbortSignal): Promise<any> {
     if (!this.domainrKey) throw new Error('domainr api key missing');
     const url = `https://domainr.p.rapidapi.com/v2/status?domain=${domain}&mashape-key=${this.domainrKey}`;
-    const res = await fetch(url, { signal });
+    const res = await fetch(url, { signal, referrerPolicy: 'no-referrer' });
     const text = await res.text();
     if (!res.ok) {
       const err: any = new Error(`domainr failed: ${res.status}`);
@@ -23,7 +23,7 @@ export class AltStatusAdapter extends BaseCheckerAdapter {
 
   private async fetchMono(domain: string, signal?: AbortSignal): Promise<any> {
     const url = `https://api.mono.domains/availability/${domain}`;
-    const res = await fetch(url, { signal });
+    const res = await fetch(url, { signal, referrerPolicy: 'no-referrer' });
     const text = await res.text();
     if (!res.ok) throw new Error(`mono domains failed: ${res.status}`);
     return JSON.parse(text);
