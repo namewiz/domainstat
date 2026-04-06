@@ -11,7 +11,9 @@ export class NgAdapter extends BaseCheckerAdapter {
 
   private async query(domain: string, signal?: AbortSignal): Promise<{ exists: boolean; raw: any }> {
     // This bypasses secure connection, their cert is expired.
-    // (TLS checks must be disabled externally if required)
+    if (process) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    }
     const res = await fetch(`https://whois.nic.net.ng/domains?name=${domain}&exactMatch=true`, { signal });
     const data = await res.json();
     const exists = Array.isArray(data.domainSearchResults) && data.domainSearchResults.length > 0;
