@@ -1,7 +1,7 @@
 import { parse } from "tldts";
 import { AltStatusAdapter } from "./adapters/altStatusAdapter";
+import { BootstrapRdapAdapter } from "./adapters/bootstrapRdapAdapter";
 import { DohAdapter } from "./adapters/dohAdapter";
-import { RdapAdapter } from "./adapters/rdapAdapter";
 import { WhoisApiAdapter } from "./adapters/whoisApiAdapter";
 import { parseRdapToWhois } from "./rdap-parser";
 import { getTldAdapter } from "./tldAdapters";
@@ -18,7 +18,7 @@ export type { DomainStatus } from "./types";
 const MAX_CONCURRENCY = 10;
 const DEFAULT_STAGGER_DELAY = 200;
 const doh = new DohAdapter();
-const rdap = new RdapAdapter();
+const rdap = new BootstrapRdapAdapter();
 
 type ResultCache = {
   get(domain: string): Promise<DomainStatus | undefined>;
