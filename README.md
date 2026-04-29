@@ -194,6 +194,11 @@ Node-based utilities (host resolver, ping, whois library) are intentionally not 
 
 If you need the previous Node-util adapters, see the `v1` branch.
 
+## Notes on RDAP
+
+- It uses the DNS list published by IANA here - https://data.iana.org/rdap/dns.json
+- The "ng" server is changed from "http://rdap.nic.net.ng/" to "https://whois.nic.net.ng/"
+
 ## Demo
 
 A small demo application lives in the `demo/` directory.
