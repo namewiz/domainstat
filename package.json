@@ -10,6 +10,7 @@
     "build:lib": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral && tsc --emitDeclarationOnly",
     "build:cli": "npx -y esbuild src/cli.ts --bundle --minify --format=esm --target=node20 --outfile=dist/cli.js --platform=node",
     "test": "npm run build && node --test",
+    "test:serial": "SERIAL=true npm run build && node --test",
     "start": "npm run build && npx serve docs"
   },
   "homepage": "https://namewiz.github.io/domainstat",

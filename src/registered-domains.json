@@ -18,7 +18,7 @@
     "pro": "cutout.pro",
     "shop": "amazon.shop",
     "site": "web.site",
-    "store": "merchbar.store",
+    "store": "google.store",
     "tech": "producthunt.tech",
     "top": "clash.top",
     "tv": "twitch.tv",
@@ -323,7 +323,7 @@
     "edu.ng": "uniniger.edu.ng",
     "gov.ng": "nimc.gov.ng",
     "i.ng": "eshop.i.ng",
-    "name.ng": "finesse.name.ng",
+    "name.ng": "test.name.ng",
     "net.ng": "shivtech.net.ng",
     "org.ng": "downsyndrome.org.ng",
     "sch.ng": "prudenceschools.sch.ng"

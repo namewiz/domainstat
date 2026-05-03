@@ -35,6 +35,16 @@ const unknownDomains = tldList.map((tld) => ({
   availability: 'unknown',
 }));
 
+const IS_SERIAL =
+  process.argv.includes('--serial') ||
+  process.argv.includes('-s') ||
+  process.env.SERIAL === 'true' ||
+  process.env.SERIAL === '1';
+
+if (IS_SERIAL) {
+  console.log('Running tests in serial mode (concurrency: 1)');
+}
+
 async function hasNetwork() {
   try {
     const controller = new AbortController();
@@ -54,6 +64,10 @@ const testSummary = {};
 const contradictoryCases = [];
 
 async function runTest(domains, opts = {}) {
+  const testOpts = {
+    ...opts,
+    ...(IS_SERIAL ? { concurrency: 1 } : {}),
+  };
   const expectedMap = Object.fromEntries(domains.map((d) => [d.name, d.availability]));
   const uniqueNames = Array.from(new Set(Object.keys(expectedMap)));
   let pass = 0;
@@ -61,7 +75,7 @@ async function runTest(domains, opts = {}) {
   let contradictions = 0; // definitive mismatches
   let latencySum = 0;
   let latencyCount = 0;
-  for await (const res of checkBatchStream(uniqueNames, opts)) {
+  for await (const res of checkBatchStream(uniqueNames, testOpts)) {
     const expected = expectedMap[res.domain];
     const actual = res.availability;
     const msg = `domain:${res.domain}, expected:${expected}, got:${actual}, resolver:${res.resolver}`;
