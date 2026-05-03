@@ -23,6 +23,7 @@ const rdap = new BootstrapRdapAdapter();
 type ResultCache = {
   get(domain: string): Promise<DomainStatus | undefined>;
   set(domain: string, value: DomainStatus): Promise<void>;
+  clear(): Promise<void>;
 };
 
 const CACHE_NAME = "domainstat:response-cache";
@@ -36,6 +37,9 @@ function createMemoryCache(): ResultCache {
     },
     async set(domain: string, value: DomainStatus) {
       store.set(domain, value);
+    },
+    async clear() {
+      store.clear();
     },
   };
 }
@@ -80,6 +84,14 @@ function createBrowserCache(scope: any): ResultCache {
       } catch {
         cachePromise = null;
         // Ignore write errors to avoid breaking the resolution flow
+      }
+    },
+    async clear() {
+      try {
+        await cacheStorage.delete(CACHE_NAME);
+        cachePromise = null;
+      } catch {
+        cachePromise = null;
       }
     },
   };
@@ -585,4 +597,11 @@ export async function checkBatch(
   }
 
   return results;
+}
+
+/**
+ * Clears the internal result cache.
+ */
+export async function clearCache(): Promise<void> {
+  await responseCache.clear();
 }

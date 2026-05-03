@@ -34,7 +34,7 @@ npm install domainstat
 ## Quick Start
 
 ```ts
-import { check, checkBatch, checkBatchStream, checkSerial, checkParallel, type DomainStatus } from 'domainstat';
+import { check, checkBatch, checkBatchStream, clearCache, type DomainStatus } from 'domainstat';
 
 const res = await check('example.com');
 // { domain: 'example.com', availability: 'registered', resolver: 'dns.doh', raw: {...} }
@@ -74,6 +74,10 @@ result and `raw` contains the raw responses from each adapter.
 ### `check(domain, options?)`
 
 Checks a single domain and resolves to a `DomainStatus` object.
+
+### `clearCache()`
+
+Clears the internal result cache. Useful when you want to force fresh lookups.
 
 ### `checkSerial(domain, options?)`
 
