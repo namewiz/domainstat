@@ -1,6 +1,6 @@
-import { AdapterResponse, AdapterSource, CheckerAdapter, ParsedDomain, TldConfigEntry } from '../types';
+import { AdapterResponse, AdapterSource, CheckerAdapter, EppConfig, ParsedDomain, TldConfigEntry } from '../types';
 
-type BaseOpts = { tldConfig?: TldConfigEntry; signal?: AbortSignal };
+type BaseOpts = { tldConfig?: TldConfigEntry; eppConfig?: EppConfig; signal?: AbortSignal };
 
 export abstract class BaseCheckerAdapter implements CheckerAdapter {
   public readonly namespace: AdapterSource;
@@ -21,6 +21,6 @@ export abstract class BaseCheckerAdapter implements CheckerAdapter {
 
   protected abstract doCheck(
     domainObj: ParsedDomain,
-    opts?: { tldConfig?: TldConfigEntry; signal?: AbortSignal },
+    opts?: BaseOpts,
   ): Promise<AdapterResponse>;
 }

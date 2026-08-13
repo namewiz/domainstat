@@ -314,6 +314,12 @@ export async function checkSerial(
     await Promise.all(running);
   }
 
+  if (!result && tldAdapter?.registry && adapterAllowed(tldAdapter.registry.namespace, opts)) {
+    logger.info(`[checkSerial] falling back to registry adapter=${tldAdapter.registry.namespace} domain=${name}`);
+    const res = await tldAdapter.registry.check(parsed, { tldConfig: opts.tldConfig, eppConfig: opts.eppConfig });
+    handleResponse(res);
+  }
+
   const finalResult: DomainStatus = result ?? {
     domain: name,
     availability: "unknown" as const,
@@ -414,6 +420,16 @@ export async function checkParallel(
       }
       pending--;
       if (pending === 0 && !controller.signal.aborted) {
+        void tryRegistryFallback();
+      }
+    };
+
+    const tryRegistryFallback = async () => {
+      if (
+        controller.signal.aborted ||
+        !tldAdapter?.registry ||
+        !adapterAllowed(tldAdapter.registry.namespace, opts)
+      ) {
         finish({
           domain: name,
           availability: "unknown",
@@ -423,7 +439,33 @@ export async function checkParallel(
           latencies,
           error: finalError,
         });
+        return;
       }
+      logger.info(`[checkParallel] falling back to registry adapter=${tldAdapter.registry.namespace} domain=${name}`);
+      const res = await tldAdapter.registry.check(parsed, { tldConfig: opts.tldConfig, eppConfig: opts.eppConfig, signal });
+      raw[res.source] = res.raw;
+      latencies[res.source] = res.latency ?? 0;
+      if (!controller.signal.aborted && !res.error && res.availability !== "unknown") {
+        finish({
+          domain: name,
+          availability: res.availability,
+          resolver: res.source,
+          raw,
+          parsed: parsedData,
+          latencies,
+          error: undefined,
+        });
+        return;
+      }
+      finish({
+        domain: name,
+        availability: "unknown",
+        resolver: "app",
+        raw,
+        parsed: parsedData,
+        latencies,
+        error: res.error ?? finalError,
+      });
     };
 
     const launch = (adapter: any, options: any) => {
@@ -505,15 +547,7 @@ export async function checkParallel(
     logger.info(`[checkParallel] launched adapters=[${adapters.join(", ")}] domain=${name}`);
 
     if (pending === 0) {
-      finish({
-        domain: name,
-        availability: "unknown",
-        resolver: "app",
-        raw,
-        parsed: parsedData,
-        latencies,
-        error: finalError,
-      });
+      void tryRegistryFallback();
     }
   });
 }

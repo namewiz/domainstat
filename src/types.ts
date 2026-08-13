@@ -11,6 +11,7 @@ export type AdapterSource =
   | 'altstatus.domainr'
   | 'altstatus.mono'
   | 'whois.api'
+  | 'registry.ng'
   | 'app';
 
 // Platform option and Node-specific utils were removed to ensure consistent
@@ -57,12 +58,22 @@ export interface DomainStatus {
 
 export type ParsedDomain = IResult;
 
+export interface EppConfig {
+  ng?: {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    rejectUnauthorized?: boolean;
+  };
+}
+
 export interface CheckerAdapter {
   /** Unique identifier used to store results for this adapter */
   namespace: string;
   check(
     domainObj: ParsedDomain,
-    opts?: { tldConfig?: TldConfigEntry; signal?: AbortSignal },
+    opts?: { tldConfig?: TldConfigEntry; eppConfig?: EppConfig; signal?: AbortSignal },
   ): Promise<AdapterResponse>;
 }
 
@@ -92,6 +103,13 @@ export interface CheckOptions {
     whoisfreaks?: string;
     whoisxml?: string;
   };
+  /**
+   * Registry (EPP) credentials for TLDs whose adapters query the registry
+   * directly as a fallback (currently only `.ng` via NIRA). Node-only —
+   * absent this, the corresponding registry adapter is a noop, which is
+   * always the case in a browser.
+   */
+  eppConfig?: EppConfig;
   /** When true, run adapters in parallel */
   burstMode?: boolean;
   /**
