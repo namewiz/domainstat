@@ -3,6 +3,7 @@ import { AltStatusAdapter } from "./adapters/altStatusAdapter";
 import { BootstrapRdapAdapter } from "./adapters/bootstrapRdapAdapter";
 import { DohAdapter } from "./adapters/dohAdapter";
 import { WhoisApiAdapter } from "./adapters/whoisApiAdapter";
+import { isPremiumNgDomain } from "./premiumNg";
 import { parseRdapToWhois } from "./rdap-parser";
 import { getTldAdapter } from "./tldAdapters";
 import {
@@ -576,6 +577,9 @@ export async function check(
   const result = opts.burstMode
     ? await checkParallel(normalized, opts)
     : await checkSerial(normalized, opts);
+  if (isPremiumNgDomain(result.domain)) {
+    result.fineStatus = "premium";
+  }
   if (cacheEnabled && (!result.error || result.error.retryable === false)) {
     await responseCache.set(normalized, result);
   }
