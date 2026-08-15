@@ -1,5 +1,6 @@
 import { AdapterResponse, EppConfig, ParsedDomain } from '../types';
 import { BaseCheckerAdapter } from './baseAdapter';
+import { checkViaEpp } from './eppCheck';
 
 type NiraDoCheckOpts = { eppConfig?: EppConfig; signal?: AbortSignal };
 
@@ -38,7 +39,7 @@ export class NiraEppAdapter extends BaseCheckerAdapter {
     }
 
     try {
-      const result = await this.checkViaEpp(domain, eppConfig, opts.signal);
+      const result = await checkViaEpp(domain, eppConfig, opts.signal);
       return {
         domain,
         availability: result.availability,
@@ -58,49 +59,6 @@ export class NiraEppAdapter extends BaseCheckerAdapter {
           retryable: true,
         },
       };
-    }
-  }
-
-  private async checkViaEpp(
-    domain: string,
-    eppConfig: NonNullable<EppConfig['ng']>,
-    signal?: AbortSignal,
-  ): Promise<{ availability: 'registered' | 'unregistered' | 'unknown'; raw: any }> {
-    // Dynamically imported so bundlers never need to resolve epp-client's
-    // Node-only `net`/`tls` dependencies for a browser build.
-    const { default: EppClient, EppClientConfig } = await import('epp-client');
-
-    const eppClientConfig = new EppClientConfig({
-      host: eppConfig.host,
-      port: eppConfig.port,
-      rejectUnauthorized: eppConfig.rejectUnauthorized,
-    });
-    const client = new EppClient(eppClientConfig);
-
-    const connectError = await client.connect();
-    if (connectError instanceof Error) throw connectError;
-
-    let loggedIn = false;
-    try {
-      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-
-      const loginResult = await client.login({ username: eppConfig.username, password: eppConfig.password });
-      if (loginResult instanceof Error) throw loginResult;
-      if (!loginResult.success) throw new Error(loginResult.resultMessage || 'NIRA EPP login failed');
-      loggedIn = true;
-
-      const checkResult = await client.checkDomain({ name: domain });
-      if (checkResult instanceof Error) throw checkResult;
-
-      const domainCheck = Array.isArray(checkResult) ? checkResult[0] : checkResult;
-      if (!domainCheck) return { availability: 'unknown', raw: null };
-
-      return { availability: domainCheck.availability, raw: domainCheck };
-    } finally {
-      if (loggedIn) {
-        await client.logout().catch(() => undefined);
-      }
-      await client.disconnect().catch(() => undefined);
     }
   }
 }

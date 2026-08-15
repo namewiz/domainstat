@@ -1,13 +1,15 @@
 {
   "name": "domainstat",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Extremely fast domain status checker library using DoH, RDAP and WHOIS API.",
   "type": "module",
   "main": "./dist/index.js",
+  "browser": "./dist/index.browser.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "npm run build:lib && npm run build:cli",
+    "build": "npm run build:lib && npm run build:lib:browser && npm run build:cli",
     "build:lib": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral --external:epp-client && tsc --emitDeclarationOnly",
+    "build:lib:browser": "node scripts/build-browser.mjs",
     "build:cli": "npx -y esbuild src/cli.ts --bundle --minify --format=esm --target=node20 --outfile=dist/cli.js --platform=node",
     "test": "npm run build && node --test",
     "test:serial": "SERIAL=true npm run build && node --test",
@@ -32,6 +34,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "browser": "./dist/index.browser.js",
       "default": "./dist/index.js"
     }
   },
@@ -50,6 +53,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "esbuild": "^0.28.2",
     "typescript": "5.6"
   }
 }
