@@ -1,8 +1,11 @@
-import { AdapterResponse, EppConfig, ParsedDomain } from '../types';
+import type { AdapterResponse, EppConfig, ParsedDomain } from '../types';
 import { BaseCheckerAdapter } from './baseAdapter';
 import { checkViaEpp } from './eppCheck';
 
-type NiraDoCheckOpts = { eppConfig?: EppConfig; signal?: AbortSignal };
+interface NiraDoCheckOpts {
+  eppConfig?: EppConfig;
+  signal?: AbortSignal;
+}
 
 /**
  * Last-resort `.ng` availability check via NIRA's EPP registry (not RDAP/HTTP).
@@ -17,11 +20,8 @@ type NiraDoCheckOpts = { eppConfig?: EppConfig; signal?: AbortSignal };
  *   this, so this adapter is a true noop for them by default).
  */
 export class NiraEppAdapter extends BaseCheckerAdapter {
-  private source: string;
-
-  constructor (source: string, namespace: 'registry.ng') {
+  constructor(namespace: 'registry.ng') {
     super(namespace);
-    this.source = source;
   }
 
   protected async doCheck(domainObj: ParsedDomain, opts: NiraDoCheckOpts = {}): Promise<AdapterResponse> {

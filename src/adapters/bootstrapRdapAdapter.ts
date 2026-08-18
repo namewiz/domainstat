@@ -1,9 +1,9 @@
 import bootstrapData from '../rdap-dns.json';
-import { AdapterResponse, ParsedDomain, TldConfigEntry } from '../types';
+import type { AdapterResponse, ParsedDomain, TldConfigEntry } from '../types';
 import { RdapAdapter } from './rdapAdapter';
 
 export class BootstrapRdapAdapter extends RdapAdapter {
-  private bootstrapMap: Map<string, string>;
+  private readonly bootstrapMap: Map<string, string>;
 
   constructor() {
     super(); // default baseUrl is rdap.org

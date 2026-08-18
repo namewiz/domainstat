@@ -1,17 +1,19 @@
-import { AdapterResponse, ParsedDomain } from '../types';
+import type { AdapterResponse, ParsedDomain } from '../types';
 import { BaseCheckerAdapter } from './baseAdapter';
 
 export class WhoisApiAdapter extends BaseCheckerAdapter {
-  private freaksKey?: string;
-  private xmlKey?: string;
-  constructor (freaksKey?: string, xmlKey?: string) {
+  private readonly freaksKey?: string;
+  private readonly xmlKey?: string;
+  constructor(freaksKey?: string, xmlKey?: string) {
     super('whois.api');
     this.freaksKey = freaksKey;
     this.xmlKey = xmlKey;
   }
 
   private async fetchFreaks(domain: string, signal?: AbortSignal): Promise<any> {
-    if (!this.freaksKey) throw new Error('whoisfreaks api key missing');
+    if (!this.freaksKey) {
+      throw new Error('whoisfreaks api key missing');
+    }
     const url = `https://api.whoisfreaks.com/v1.0/whois?apiKey=${this.freaksKey}&whois=live&domain=${domain}`;
     const res = await fetch(url, { signal });
     const text = await res.text();
@@ -24,11 +26,15 @@ export class WhoisApiAdapter extends BaseCheckerAdapter {
   }
 
   private async fetchXml(domain: string, signal?: AbortSignal): Promise<any> {
-    if (!this.xmlKey) throw new Error('whoisxml api key missing');
+    if (!this.xmlKey) {
+      throw new Error('whoisxml api key missing');
+    }
     const url = `https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${this.xmlKey}&domainName=${domain}&outputFormat=JSON`;
     const res = await fetch(url, { signal });
     const text = await res.text();
-    if (!res.ok) throw new Error(`whoisxml failed: ${res.status}`);
+    if (!res.ok) {
+      throw new Error(`whoisxml failed: ${res.status}`);
+    }
     return JSON.parse(text);
   }
 

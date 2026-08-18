@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Enforces Conventional Commits (https://www.conventionalcommits.org/) on the subject line.
+set -e
+
+commit_msg_file="$1"
+subject_line=$(head -n1 "$commit_msg_file")
+
+pattern='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9.-]+\))?!?: .+'
+
+if ! echo "$subject_line" | grep -qE "$pattern"; then
+  echo "[commit-msg] Commit message does not follow Conventional Commits format:"
+  echo "  <type>(<optional scope>): <description>"
+  echo "  e.g. feat(rdap): add fallback bootstrap registry lookup"
+  echo "  types: build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test"
+  echo
+  echo "  Got: \"$subject_line\""
+  exit 1
+fi
+
+"$(dirname "$0")/test-reminder.sh" "$commit_msg_file"

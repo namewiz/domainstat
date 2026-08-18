@@ -1,4 +1,4 @@
-import { EppConfig } from '../types';
+import type { EppConfig } from '../types';
 
 /**
  * Browser stub: dead code in practice, since niraEppAdapter.ts's `isBrowser`

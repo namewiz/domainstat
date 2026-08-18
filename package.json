@@ -7,12 +7,17 @@
   "browser": "./dist/index.browser.js",
   "types": "./dist/index.d.ts",
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "build": "npm run build:lib && npm run build:lib:browser && npm run build:cli",
     "build:lib": "npx -y esbuild src/index.ts --bundle --minify --format=esm --target=es2020 --outdir=dist/ --platform=neutral --external:epp-client && tsc --emitDeclarationOnly",
     "build:lib:browser": "node scripts/build-browser.mjs",
     "build:cli": "npx -y esbuild src/cli.ts --bundle --minify --format=esm --target=node20 --outfile=dist/cli.js --platform=node",
     "test": "npm run build && node --test",
     "test:serial": "SERIAL=true npm run build && node --test",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "knip": "knip",
     "start": "npm run build && npx serve docs"
   },
   "homepage": "https://namewiz.github.io/domainstat",
@@ -24,13 +29,7 @@
     "url": "https://github.com/namewiz/domainstat/issues"
   },
   "author": "Justice Ogbonna <dev@justiceo.com>",
-  "keywords": [
-    "domain-name",
-    "domain-status",
-    "domain-availability",
-    "rdap",
-    "whois"
-  ],
+  "keywords": ["domain-name", "domain-status", "domain-availability", "rdap", "whois"],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -41,9 +40,7 @@
   "bin": {
     "domainstat": "./dist/cli.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "license": "MIT",
   "dependencies": {
     "tldts": "^7.0.30"
@@ -52,8 +49,11 @@
     "epp-client": "^0.4.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.8",
     "@types/node": "^25.6.0",
     "esbuild": "^0.28.2",
-    "typescript": "5.6"
+    "knip": "^6.32.2",
+    "tldts-core": "^7.4.10",
+    "typescript": "^5.9.3"
   }
 }

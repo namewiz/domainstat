@@ -1,6 +1,6 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkBatchStream, checkBatch, check } from '../dist/index.js';
+import test from 'node:test';
+import { check, checkBatch, checkBatchStream } from '../dist/index.js';
 import registeredDomainsJson from '../src/registered-domains.json' with { type: 'json' };
 import supportedTlDs from '../src/tlds.json' with { type: 'json' };
 
@@ -269,8 +269,8 @@ test('each adapter sets raw field', async () => {
 
   for (const { ns, opts } of adapters) {
     const [result] = await checkBatch(['example.com'], { only: [ns], ...opts, verbose: true });
-    assert.ok(Object.prototype.hasOwnProperty.call(result.raw, ns), `${ns} should set raw field`);
-    assert.ok(Object.prototype.hasOwnProperty.call(result.latencies, ns), `${ns} should report latency`);
+    assert.ok(Object.hasOwn(result.raw, ns), `${ns} should set raw field`);
+    assert.ok(Object.hasOwn(result.latencies, ns), `${ns} should report latency`);
   }
 });
 
@@ -319,7 +319,7 @@ function printSummary() {
     const ratio = `${pass}/${total}`;
     const percent = `${((pass / total) * 100).toFixed(2)}%`;
     const passed = pass / total >= cutoff;
-    const avgLatency = '' + latencyCount ? (latencySum / latencyCount).toFixed(2) : 'N/A';
+    const avgLatency = `${latencyCount}` ? (latencySum / latencyCount).toFixed(2) : 'N/A';
     const color = passed && contradictions === 0 ? GREEN : RED;
     console.log(
       color +

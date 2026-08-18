@@ -1,5 +1,6 @@
-import tlds from './tlds.json' assert { type: 'json' };
-import { DomainStatus, ParsedDomain } from './types.js';
+import tlds from './tlds.json' with { type: 'json' };
+
+import type { DomainStatus, ParsedDomain } from './types.js';
 
 const tldMap: Record<string, string | boolean> = {
   ...(tlds as any).popular,

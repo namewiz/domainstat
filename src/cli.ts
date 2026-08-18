@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import process from 'node:process';
-import { createRequire } from 'node:module';
 import { Console as NodeConsole } from 'node:console';
+import { createRequire } from 'node:module';
+import process from 'node:process';
 import { checkBatchStream } from './index';
 import type { AdapterSource, CheckOptions, DomainStatus } from './types';
 
@@ -225,7 +225,9 @@ function parseArgs(argv: string[]): ParsedCliArgs {
 
     if (flag === '--domainr-key') {
       const { value, nextIndex } = readValue(argv, index, inlineValue, flag);
-      if (!apiKeys) apiKeys = {};
+      if (!apiKeys) {
+        apiKeys = {};
+      }
       apiKeys.domainr = value;
       index = nextIndex;
       continue;
@@ -233,7 +235,9 @@ function parseArgs(argv: string[]): ParsedCliArgs {
 
     if (flag === '--whoisfreaks-key') {
       const { value, nextIndex } = readValue(argv, index, inlineValue, flag);
-      if (!apiKeys) apiKeys = {};
+      if (!apiKeys) {
+        apiKeys = {};
+      }
       apiKeys.whoisfreaks = value;
       index = nextIndex;
       continue;
@@ -241,7 +245,9 @@ function parseArgs(argv: string[]): ParsedCliArgs {
 
     if (flag === '--whoisxml-key') {
       const { value, nextIndex } = readValue(argv, index, inlineValue, flag);
-      if (!apiKeys) apiKeys = {};
+      if (!apiKeys) {
+        apiKeys = {};
+      }
       apiKeys.whoisxml = value;
       index = nextIndex;
       continue;
@@ -319,7 +325,9 @@ const STATUS_ICONS: Record<string, string> = {
 };
 
 function colorize(text: string, colorCode: string, enabled: boolean): string {
-  if (!enabled || !colorCode) return text;
+  if (!enabled || !colorCode) {
+    return text;
+  }
   return `${colorCode}${text}${RESET}`;
 }
 
@@ -329,9 +337,7 @@ function formatPretty(res: DomainStatus, useColor: boolean): string {
   const statusText = colorize(res.availability, color, useColor);
   const resolver = res.resolver;
   const latency = res.latencies?.[resolver];
-  const latencyText = typeof latency === 'number' && Number.isFinite(latency)
-    ? ` in ${Math.round(latency)}ms`
-    : '';
+  const latencyText = typeof latency === 'number' && Number.isFinite(latency) ? ` in ${Math.round(latency)}ms` : '';
   const fineStatus = res.fineStatus ? ` [${res.fineStatus}]` : '';
   const errorText = res.error ? ` error(${res.error.code}): ${res.error.message}` : '';
   return `${icon} ${res.domain}${fineStatus} -> ${statusText} via ${resolver}${latencyText}${errorText}`;
@@ -429,7 +435,7 @@ async function run(): Promise<void> {
   }
 
   const defaultColor = process.stdout.isTTY && !('NO_COLOR' in process.env);
-  const useColor = parsed.format === 'json' ? false : parsed.colorPreference ?? defaultColor;
+  const useColor = parsed.format === 'json' ? false : (parsed.colorPreference ?? defaultColor);
 
   try {
     for await (const res of checkBatchStream(parsed.domains, parsed.options)) {
@@ -460,4 +466,3 @@ run().catch((err) => {
   }
   process.exitCode = 1;
 });
-

@@ -1,4 +1,4 @@
-import premiumNgDomains from './premium-ng-domains.json' assert { type: 'json' };
+import premiumNgDomains from './premium-ng-domains.json' with { type: 'json' };
 
 const premiumNgSet = new Set(premiumNgDomains as string[]);
 

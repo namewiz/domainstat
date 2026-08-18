@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Checks for outdated/vulnerable dependencies after every commit and, if any
+# are found, prints a reminder for whoever (or whichever agent) just
+# committed. Never blocks — post-commit hooks can't reject a commit that
+# already happened.
+set -euo pipefail
+
+"$(dirname "$0")/dependency-check.sh"

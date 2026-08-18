@@ -1,7 +1,5 @@
-
-
 type JCardProperty = [string, Record<string, any>, string, string | number];
-type JCard = ["vcard", JCardProperty[]];
+type JCard = ['vcard', JCardProperty[]];
 
 interface RdapLink {
   value?: string;
@@ -44,7 +42,7 @@ interface RdapData {
   [key: string]: any; // Allow other properties
 }
 
-type Whois = {
+interface Whois {
   domainInfo: {
     domainName: string;
     registeredDate: string;
@@ -82,7 +80,9 @@ type Whois = {
  * Extracts a specific property value from a jCard (vCard JSON) array.
  */
 function getVCardProp(vcardEntry: JCard | undefined, propName: string): string {
-  if (!vcardEntry || !Array.isArray(vcardEntry) || vcardEntry.length < 2) return "";
+  if (!vcardEntry || !Array.isArray(vcardEntry) || vcardEntry.length < 2) {
+    return '';
+  }
 
   const properties = vcardEntry[1];
 
@@ -91,7 +91,7 @@ function getVCardProp(vcardEntry: JCard | undefined, propName: string): string {
 
   // The value is usually at index 3.
   // We cast to string to ensure type safety, though it can be a number sometimes.
-  return prop && prop[3] ? String(prop[3]) : "";
+  return prop && prop[3] ? String(prop[3]) : '';
 }
 
 /**
@@ -104,48 +104,46 @@ export function parseRdapToWhois(rdapResponse: RdapData): Whois {
   // --- Domain Info ---
   const events = data.events || [];
 
-  const getEventDate = (action: string): string =>
-    events.find(e => e.eventAction === action)?.eventDate || "";
+  const getEventDate = (action: string): string => events.find((e) => e.eventAction === action)?.eventDate || '';
 
   const domainInfo = {
-    domainName: data.ldhName || "",
-    registeredDate: getEventDate("registration"),
-    expiryDate: getEventDate("expiration"),
-    lastUpdate: getEventDate("last changed") || getEventDate("last update of RDAP database"),
+    domainName: data.ldhName || '',
+    registeredDate: getEventDate('registration'),
+    expiryDate: getEventDate('expiration'),
+    lastUpdate: getEventDate('last changed') || getEventDate('last update of RDAP database'),
     status: (data.status || []).map((s) => s.trim()),
-    nameservers: (data.nameservers || [])
-      .map((ns) => ns.ldhName?.trim())
-      .filter((n): n is string => !!n),
+    nameservers: (data.nameservers || []).map((ns) => ns.ldhName?.trim()).filter((n): n is string => !!n),
   };
 
   // --- Entity Parsing ---
   const entities = data.entities || [];
 
   // Find Registrar
-  const registrarEntity = entities.find(e => e.roles?.includes("registrar"));
+  const registrarEntity = entities.find((e) => e.roles?.includes('registrar'));
   const registrarVcard = registrarEntity?.vcardArray;
 
   // Find Abuse Contact (check nested entities inside Registrar first, then top level)
-  const abuseEntity = registrarEntity?.entities?.find(e => e.roles?.includes("abuse"))
-    || entities.find(e => e.roles?.includes("abuse"));
+  const abuseEntity =
+    registrarEntity?.entities?.find((e) => e.roles?.includes('abuse')) ||
+    entities.find((e) => e.roles?.includes('abuse'));
   const abuseVcard = abuseEntity?.vcardArray;
 
   // Find Registrant
-  const registrantEntity = entities.find(e => e.roles?.includes("registrant"));
+  const registrantEntity = entities.find((e) => e.roles?.includes('registrant'));
   const registrantVcard = registrantEntity?.vcardArray;
 
   // --- Registrar Info ---
-  const ianaIdObj = registrarEntity?.publicIds?.find(id => id.type?.includes("IANA"));
+  const ianaIdObj = registrarEntity?.publicIds?.find((id) => id.type?.includes('IANA'));
 
   // Find a suitable URL link
-  const registrarUrlObj = registrarEntity?.links?.find(l => l.rel === "about" || l.rel === "related");
+  const registrarUrlObj = registrarEntity?.links?.find((l) => l.rel === 'about' || l.rel === 'related');
 
   const registrarInfo = {
-    registrar: getVCardProp(registrarVcard, "fn") || "Unknown",
-    iana_id: ianaIdObj?.identifier || "",
-    url: registrarUrlObj?.href || "",
-    abuseEmail: getVCardProp(abuseVcard, "email"),
-    abusePhone: getVCardProp(abuseVcard, "tel"),
+    registrar: getVCardProp(registrarVcard, 'fn') || 'Unknown',
+    iana_id: ianaIdObj?.identifier || '',
+    url: registrarUrlObj?.href || '',
+    abuseEmail: getVCardProp(abuseVcard, 'email'),
+    abusePhone: getVCardProp(abuseVcard, 'tel'),
   };
 
   // --- Registrant Info ---
@@ -154,32 +152,32 @@ export function parseRdapToWhois(rdapResponse: RdapData): Whois {
   // We temporarily access the raw array logic inside getVCardProp,
   // but since we need index access, we'll do a manual find here for 'adr'.
   let addressObj = {
-    street: "",
-    city: "",
-    state: "",
-    zipcode: "",
-    country: ""
+    street: '',
+    city: '',
+    state: '',
+    zipcode: '',
+    country: '',
   };
 
   if (registrantVcard && registrantVcard[1]) {
-    const adrProp = registrantVcard[1].find(p => p[0] === 'adr');
+    const adrProp = registrantVcard[1].find((p) => p[0] === 'adr');
     if (adrProp && Array.isArray(adrProp[3])) {
       // The value part of 'adr' is an array of strings
       const adrParts = adrProp[3] as unknown as string[];
       addressObj = {
-        street: adrParts[2] || "",
-        city: adrParts[3] || "",
-        state: adrParts[4] || "",
-        zipcode: adrParts[5] || "",
-        country: adrParts[6] || ""
+        street: adrParts[2] || '',
+        city: adrParts[3] || '',
+        state: adrParts[4] || '',
+        zipcode: adrParts[5] || '',
+        country: adrParts[6] || '',
       };
     }
   }
 
   const registrantInfo = {
-    fullName: getVCardProp(registrantVcard, "fn"),
-    phone: getVCardProp(registrantVcard, "tel"),
-    email: getVCardProp(registrantVcard, "email"),
+    fullName: getVCardProp(registrantVcard, 'fn'),
+    phone: getVCardProp(registrantVcard, 'tel'),
+    email: getVCardProp(registrantVcard, 'email'),
     address: addressObj,
   };
 

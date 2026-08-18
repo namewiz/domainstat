@@ -1,6 +1,6 @@
-import { build } from 'esbuild';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { build } from 'esbuild';
 
 const eppCheckPath = fileURLToPath(new URL('../src/adapters/eppCheck.ts', import.meta.url));
 const eppCheckBrowserPath = fileURLToPath(new URL('../src/adapters/eppCheck.browser.ts', import.meta.url));
@@ -13,7 +13,7 @@ const swapEppCheckPlugin = {
   name: 'swap-eppcheck-browser',
   setup(pluginBuild) {
     pluginBuild.onResolve({ filter: /^\.\/eppCheck$/ }, (args) => {
-      const resolved = path.resolve(args.resolveDir, args.path) + '.ts';
+      const resolved = `${path.resolve(args.resolveDir, args.path)}.ts`;
       if (resolved === eppCheckPath) {
         return { path: eppCheckBrowserPath };
       }

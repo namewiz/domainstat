@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Pre-commit checks: lint, formatting, dead code, and an AI review against
+# .claude/review-guidelines.md. Installed via `npm install` (see the
+# "prepare" script in package.json, which runs `git config core.hooksPath
+# .githooks`). No coverage gate here: this package's test suite makes real
+# calls to live DoH/RDAP/WHOIS services (by design, see review-guidelines),
+# which makes a "did coverage drop" gate too flaky/slow to run on every
+# commit — run `npm test` manually instead.
+
+set -e
+
+echo "[pre-commit] Running lint..."
+npm run lint
+
+echo "[pre-commit] Checking formatting..."
+npx biome format .
+
+echo "[pre-commit] Checking for dead code..."
+npm run knip
+
+echo "[pre-commit] Running AI review..."
+"$(dirname "$0")/ai-review.sh"
+
+echo "[pre-commit] All checks passed."

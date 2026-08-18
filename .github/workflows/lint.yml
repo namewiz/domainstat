@@ -1,0 +1,17 @@
+name: Lint
+on:
+  push:
+    branches: ["**"]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install
+      - name: Run Biome
+        run: npm run lint
+      - name: Check for dead code
+        run: npm run knip

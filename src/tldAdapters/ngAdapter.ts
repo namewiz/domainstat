@@ -1,19 +1,18 @@
 import { BaseCheckerAdapter } from '../adapters/baseAdapter';
-import { AdapterResponse, AdapterSource, ParsedDomain } from '../types';
+import type { AdapterResponse, AdapterSource, ParsedDomain } from '../types';
 
 export class NgAdapter extends BaseCheckerAdapter {
-  private source: AdapterSource;
-
-  constructor (source: AdapterSource, namespace: AdapterSource) {
+  constructor(namespace: AdapterSource) {
     super(namespace);
-    this.source = source;
   }
 
   private async query(domain: string, signal?: AbortSignal): Promise<{ exists: boolean; raw: any }> {
     // This bypasses secure connection, their cert is expired.
     const hasProcess = typeof process !== 'undefined';
     const prev = hasProcess ? process.env.NODE_TLS_REJECT_UNAUTHORIZED : undefined;
-    if (hasProcess) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    if (hasProcess) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    }
     try {
       const res = await fetch(`https://whois.nic.net.ng/domains?name=${domain}&exactMatch=true`, { signal });
       const data = await res.json();
