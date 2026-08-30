@@ -1,0 +1,110 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Install
+        run: npm ci
+
+      # The published version tracks the latest git tag, not whatever's
+      # committed in package.json — so the default here is an automatic
+      # patch bump, and it stays untagged (skipped) when a push touches
+      # nothing under src/. To ship a minor/major instead, bump the
+      # "version" field in package.json as part of the PR; a version
+      # already ahead of the latest tag is taken as-is instead of being
+      # patch-bumped.
+      - name: Determine version
+        id: version
+        run: |
+          set -euo pipefail
+          git fetch --tags --quiet
+
+          latest_tag="$(git tag --list 'v*.*.*' --sort=-v:refname | head -n1)"
+          if [ -z "$latest_tag" ]; then
+            base_version="0.0.0"
+            diff_ref="$(git rev-list --max-parents=0 HEAD | tail -n1)"
+          else
+            base_version="${latest_tag#v}"
+            diff_ref="$latest_tag"
+          fi
+
+          pkg_version="$(npm pkg get version | tr -d '"')"
+          highest="$(printf '%s\n%s\n' "$pkg_version" "$base_version" | sort -V | tail -n1)"
+
+          if [ "$highest" = "$pkg_version" ] && [ "$pkg_version" != "$base_version" ]; then
+            target_version="$pkg_version"
+            echo "Manual bump detected in package.json: $base_version -> $target_version"
+          else
+            src_changed="$(git diff --name-only "$diff_ref"..HEAD -- src/)"
+            if [ -z "$src_changed" ]; then
+              echo "No src/ changes since $diff_ref; nothing to publish."
+              echo "publish=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            IFS='.' read -r major minor patch <<< "$base_version"
+            target_version="$major.$minor.$((patch + 1))"
+            npm pkg set version="$target_version"
+            echo "Auto patch bump: $base_version -> $target_version"
+          fi
+
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+          echo "version=$target_version" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        if: steps.version.outputs.publish == 'true'
+        run: npm run build
+
+      - name: Test
+        if: steps.version.outputs.publish == 'true'
+        run: npm test
+
+      - name: Package dry run
+        if: steps.version.outputs.publish == 'true'
+        run: npm pack --dry-run
+
+      # Trusted publishing authenticates via GitHub's OIDC token instead of a
+      # long-lived NPM_TOKEN secret — npm exchanges it for a short-lived
+      # publish credential, scoped to this exact repo + workflow file. Needs
+      # npm >= 11.5.1 (this workflow's filename, "publish.yml", must match
+      # what's registered as the trusted publisher on npmjs.com).
+      - name: Update npm
+        if: steps.version.outputs.publish == 'true'
+        run: npm install -g npm@latest
+
+      - name: Publish
+        if: steps.version.outputs.publish == 'true'
+        run: npm publish --provenance --access public
+
+      - name: Tag and create release
+        if: steps.version.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          git tag "v$version"
+          git push origin "v$version"
+          gh release create "v$version" --generate-notes
