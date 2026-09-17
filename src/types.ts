@@ -1,6 +1,6 @@
 import type { IResult } from 'tldts-core';
 
-export type Availability = 'unregistered' | 'registered' | 'unsupported' | 'invalid' | 'unknown';
+type Availability = 'unregistered' | 'registered' | 'unsupported' | 'invalid' | 'unknown';
 
 export type AdapterSource =
   | 'validator'
