@@ -6,7 +6,7 @@ test('clearCache should empty the cache', async (t) => {
   const domain = 'example.com';
   const logs = [];
   const logger = {
-    info: (msg) => logs.push(msg),
+    info: (message) => logs.push(message),
     warn: () => {
       // unused in this test
     },
@@ -26,7 +26,7 @@ test('clearCache should empty the cache', async (t) => {
   // 2. Second check should be a cache hit
   await check(domain, { verbose: true, logger });
   assert.ok(
-    logs.some((l) => l.includes('[check] cache hit')),
+    logs.some((message) => message.includes('[check] cache hit')),
     'Should have hit the cache',
   );
   logs.length = 0;
@@ -36,7 +36,10 @@ test('clearCache should empty the cache', async (t) => {
 
   // 4. Third check should NOT be a cache hit
   await check(domain, { verbose: true, logger });
-  assert.ok(!logs.some((l) => l.includes('[check] cache hit')), 'Should NOT have hit the cache after clearing');
+  assert.ok(
+    !logs.some((message) => message.includes('[check] cache hit')),
+    'Should NOT have hit the cache after clearing',
+  );
   assert.ok(
     logs.some((l) => l.includes('[check] domain=')),
     'Should have performed a fresh lookup',
@@ -52,7 +55,7 @@ test('cached results expire after 2 hours', async (t) => {
 
   const logs = [];
   const logger = {
-    info: (msg) => logs.push(msg),
+    info: (message) => logs.push(message),
     warn: () => {
       // unused in this test
     },
@@ -60,7 +63,7 @@ test('cached results expire after 2 hours', async (t) => {
       // unused in this test
     },
   };
-  const isCacheHit = () => logs.some((l) => l.includes('[check] cache hit'));
+  const isCacheHit = () => logs.some((message) => message.includes('[check] cache hit'));
 
   await clearCache();
   await check(domain, { verbose: true, logger });
