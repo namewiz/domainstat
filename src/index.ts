@@ -24,15 +24,44 @@ interface ResultCache {
 
 const CACHE_NAME = 'domainstat:response-cache';
 const CACHE_URL_PREFIX = 'https://domainstat.local/cache/';
+/** Cached results older than this are treated as misses and evicted. */
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000;
+const CACHE_EXPIRES_HEADER = 'x-domainstat-expires-at';
+
+interface MemoryCacheEntry {
+  value: DomainStatus;
+  expiresAt: number;
+}
 
 function createMemoryCache(): ResultCache {
-  const store = new Map<string, DomainStatus>();
+  // Every entry gets the same TTL and `set` re-inserts keys, so Map insertion
+  // order is also expiry order: the sweep can stop at the first live entry.
+  const store = new Map<string, MemoryCacheEntry>();
+  const evictExpired = (now: number) => {
+    for (const [domain, entry] of store) {
+      if (entry.expiresAt > now) {
+        break;
+      }
+      store.delete(domain);
+    }
+  };
   return {
     async get(domain: string) {
-      return store.get(domain);
+      const entry = store.get(domain);
+      if (!entry) {
+        return undefined;
+      }
+      if (entry.expiresAt <= Date.now()) {
+        store.delete(domain);
+        return undefined;
+      }
+      return entry.value;
     },
     async set(domain: string, value: DomainStatus) {
-      store.set(domain, value);
+      const now = Date.now();
+      evictExpired(now);
+      store.delete(domain);
+      store.set(domain, { value, expiresAt: now + CACHE_TTL_MS });
     },
     async clear() {
       store.clear();
@@ -59,8 +88,15 @@ function createBrowserCache(scope: any): ResultCache {
     async get(domain: string) {
       try {
         const cache = await getCache();
-        const cachedResponse = await cache.match(buildRequest(domain));
+        const request = buildRequest(domain);
+        const cachedResponse = await cache.match(request);
         if (!cachedResponse) {
+          return undefined;
+        }
+        // Entries written before the TTL existed have no expiry header; treat them as expired too.
+        const expiresAt = Number(cachedResponse.headers.get(CACHE_EXPIRES_HEADER));
+        if (Number.isNaN(expiresAt) || expiresAt <= Date.now()) {
+          await cache.delete(request);
           return undefined;
         }
         const text = await cachedResponse.text();
@@ -77,7 +113,10 @@ function createBrowserCache(scope: any): ResultCache {
       try {
         const cache = await getCache();
         const response = new scope.Response(JSON.stringify(value), {
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            [CACHE_EXPIRES_HEADER]: String(Date.now() + CACHE_TTL_MS),
+          },
         });
         await cache.put(buildRequest(domain), response);
       } catch {

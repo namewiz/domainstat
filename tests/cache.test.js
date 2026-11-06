@@ -42,3 +42,41 @@ test('clearCache should empty the cache', async (t) => {
     'Should have performed a fresh lookup',
   );
 });
+
+test('cached results expire after 2 hours', async (t) => {
+  const domain = 'example.com';
+  const twoHoursMs = 2 * 60 * 60 * 1000;
+  const start = Date.now();
+  let now = start;
+  t.mock.method(Date, 'now', () => now);
+
+  const logs = [];
+  const logger = {
+    info: (msg) => logs.push(msg),
+    warn: () => {
+      // unused in this test
+    },
+    error: () => {
+      // unused in this test
+    },
+  };
+  const isCacheHit = () => logs.some((l) => l.includes('[check] cache hit'));
+
+  await clearCache();
+  await check(domain, { verbose: true, logger });
+  assert.ok(!isCacheHit(), 'First lookup should not be a cache hit');
+  logs.length = 0;
+
+  now = start + twoHoursMs - 1;
+  await check(domain, { verbose: true, logger });
+  assert.ok(isCacheHit(), 'Should still hit the cache just before 2 hours');
+  logs.length = 0;
+
+  now = start + twoHoursMs;
+  await check(domain, { verbose: true, logger });
+  assert.ok(!isCacheHit(), 'Should NOT hit the cache once 2 hours have passed');
+  assert.ok(
+    logs.some((l) => l.includes('[check] domain=')),
+    'Should have performed a fresh lookup after expiry',
+  );
+});

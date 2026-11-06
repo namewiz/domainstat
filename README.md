@@ -78,6 +78,7 @@ Checks a single domain and resolves to a `DomainStatus` object.
 ### `clearCache()`
 
 Clears the internal result cache. Useful when you want to force fresh lookups.
+Cached results also expire on their own 2 hours after they were stored.
 
 ### `checkSerial(domain, options?)`
 
@@ -107,7 +108,7 @@ finishes.
 | only?            | `string[]`                                                      | Run only adapters whose namespace starts with these prefixes.                                |
 | skip?            | `string[]`                                                      | Skip adapters whose namespace starts with these prefixes.                                    |
 | tldConfig?       | `TldConfigEntry`                                                | Per‑TLD overrides such as RDAP server.                                                       |
-| cache?           | `boolean`                                                       | Enable or disable caching (default `true`).                                                  |
+| cache?           | `boolean`                                                       | Enable or disable caching (default `true`). Cached results expire after 2 hours.             |
 | apiKeys?         | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services.                                                           |
 | burstMode?       | `boolean`                                                       | When true, use `checkParallel` to query all adapters simultaneously.                         |
 | staggerDelay?    | `Partial<Record<AdapterSource, number>>`                        | Per‑adapter delay before launching the next in serial mode; defaults to `200ms` per entry.   |
