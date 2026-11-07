@@ -78,7 +78,7 @@ Checks a single domain and resolves to a `DomainStatus` object.
 ### `clearCache()`
 
 Clears the internal result cache. Useful when you want to force fresh lookups.
-Cached results also expire on their own 2 hours after they were stored.
+Cached results also expire on their own after `cacheTtl` (2 hours by default).
 
 ### `checkSerial(domain, options?)`
 
@@ -108,13 +108,17 @@ finishes.
 | only?            | `string[]`                                                      | Run only adapters whose namespace starts with these prefixes.                                |
 | skip?            | `string[]`                                                      | Skip adapters whose namespace starts with these prefixes.                                    |
 | tldConfig?       | `TldConfigEntry`                                                | Per‑TLD overrides such as RDAP server.                                                       |
-| cache?           | `boolean`                                                       | Enable or disable caching (default `true`). Cached results expire after 2 hours.             |
+| cache?           | `boolean`                                                       | Allow returning a cached result (default `true`). With `false`, the fresh result is still cached. |
+| cacheTtl?        | `number`                                                        | Cache lifetime in ms (default `7200000`, 2 hours). Also the oldest cached result this call accepts. |
 | apiKeys?         | `{ domainr?: string; whoisfreaks?: string; whoisxml?: string }` | API keys for third‑party services.                                                           |
 | burstMode?       | `boolean`                                                       | When true, use `checkParallel` to query all adapters simultaneously.                         |
 | staggerDelay?    | `Partial<Record<AdapterSource, number>>`                        | Per‑adapter delay before launching the next in serial mode; defaults to `200ms` per entry.   |
 | timeoutConfig?   | `Partial<Record<AdapterSource, number>>`                        | Maximum execution time per adapter in milliseconds.                                          |
 
-Logging is disabled unless `verbose` is set. Set `cache: false` to disable caching.
+Logging is disabled unless `verbose` is set. Set `cache: false` to skip the cache for a lookup: the
+domain is looked up fresh and the new result replaces the cached one. `cacheTtl` applies both ways: a
+result is kept for the `cacheTtl` of the call that fetched it, and a call never gets back a result older
+than its own `cacheTtl`. `cacheTtl: 0` never serves from the cache.
 
 ### Adapters
 

@@ -74,4 +74,14 @@ test('browser cache honours the 2 hour TTL', async (t) => {
   await check(domain, { verbose: true, logger });
   assert.ok(!isCacheHit(), 'Should NOT hit the cache once 2 hours have passed');
   assert.ok(deletedUrls.includes(cacheUrl), 'The expired entry should be deleted');
+  logs.length = 0;
+
+  // The entry just re-stored is live, but older than a shorter cacheTtl asked for by this call.
+  now = start + twoHoursMs + 1000;
+  await check(domain, { verbose: true, logger, cacheTtl: 1000 });
+  assert.ok(!isCacheHit(), 'A result older than this call’s cacheTtl should not be returned');
+  assert.ok(
+    entries.get(cacheUrl)?.headers.get('x-domainstat-stored-at'),
+    'Entries should record when they were stored',
+  );
 });

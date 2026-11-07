@@ -16,55 +16,85 @@ const DEFAULT_STAGGER_DELAY = 200;
 const doh = new DohAdapter();
 const rdap = new BootstrapRdapAdapter();
 
+interface CacheEntryTimes {
+  /** When the result was stored (ms since epoch). */
+  storedAt: number;
+  /** When the result stops being served (ms since epoch): storedAt plus the writer's TTL. */
+  expiresAt: number;
+}
+
 interface ResultCache {
-  get(domain: string): Promise<DomainStatus | undefined>;
-  set(domain: string, value: DomainStatus): Promise<void>;
+  /** Returns the cached result unless it has expired or is older than `maxAge` ms. */
+  get(domain: string, maxAge: number): Promise<DomainStatus | undefined>;
+  /** Stores `value`, to be served for at most `ttl` ms. */
+  set(domain: string, value: DomainStatus, ttl: number): Promise<void>;
   clear(): Promise<void>;
 }
 
 const CACHE_NAME = 'domainstat:response-cache';
 const CACHE_URL_PREFIX = 'https://domainstat.local/cache/';
-/** Cached results older than this are treated as misses and evicted. */
-const CACHE_TTL_MS = 2 * 60 * 60 * 1000;
+const DEFAULT_CACHE_TTL = 2 * 60 * 60 * 1000;
+const CACHE_STORED_HEADER = 'x-domainstat-stored-at';
 const CACHE_EXPIRES_HEADER = 'x-domainstat-expires-at';
+/** The in-memory cache sweeps out expired entries whenever it reaches this size, then twice its live size. */
+const MIN_MEMORY_SWEEP_SIZE = 1000;
 
-interface MemoryCacheEntry {
+function isFresh(times: CacheEntryTimes, maxAge: number, now: number): boolean {
+  return now < times.expiresAt && now - times.storedAt < maxAge;
+}
+
+function resolveCacheTtl(opts: CheckOptions): number {
+  if (opts.cacheTtl === undefined) {
+    return DEFAULT_CACHE_TTL;
+  }
+  const ttl = Number(opts.cacheTtl);
+  if (Number.isNaN(ttl) || ttl < 0) {
+    throw new RangeError(`cacheTtl must be a non-negative number of milliseconds, got ${opts.cacheTtl}`);
+  }
+  return ttl;
+}
+
+interface MemoryCacheEntry extends CacheEntryTimes {
   value: DomainStatus;
-  expiresAt: number;
 }
 
 function createMemoryCache(): ResultCache {
-  // Every entry gets the same TTL and `set` re-inserts keys, so Map insertion
-  // order is also expiry order: the sweep can stop at the first live entry.
   const store = new Map<string, MemoryCacheEntry>();
-  const evictExpired = (now: number) => {
-    for (const [domain, entry] of store) {
-      if (entry.expiresAt > now) {
-        break;
-      }
-      store.delete(domain);
+  let nextSweepSize = MIN_MEMORY_SWEEP_SIZE;
+  // Entries can have different TTLs, so a sweep has to scan the whole Map. Sweeping only when
+  // the Map has doubled since the last sweep keeps the cost amortized O(1) per write.
+  const sweepIfLarge = (now: number) => {
+    if (store.size < nextSweepSize) {
+      return;
     }
+    for (const [domain, entry] of store) {
+      if (entry.expiresAt <= now) {
+        store.delete(domain);
+      }
+    }
+    nextSweepSize = Math.max(MIN_MEMORY_SWEEP_SIZE, store.size * 2);
   };
   return {
-    async get(domain: string) {
+    async get(domain: string, maxAge: number) {
       const entry = store.get(domain);
       if (!entry) {
         return undefined;
       }
-      if (entry.expiresAt <= Date.now()) {
+      const now = Date.now();
+      if (entry.expiresAt <= now) {
         store.delete(domain);
         return undefined;
       }
-      return entry.value;
+      return isFresh(entry, maxAge, now) ? entry.value : undefined;
     },
-    async set(domain: string, value: DomainStatus) {
+    async set(domain: string, value: DomainStatus, ttl: number) {
       const now = Date.now();
-      evictExpired(now);
-      store.delete(domain);
-      store.set(domain, { value, expiresAt: now + CACHE_TTL_MS });
+      store.set(domain, { value, storedAt: now, expiresAt: now + ttl });
+      sweepIfLarge(now);
     },
     async clear() {
       store.clear();
+      nextSweepSize = MIN_MEMORY_SWEEP_SIZE;
     },
   };
 }
@@ -85,7 +115,7 @@ function createBrowserCache(scope: any): ResultCache {
   };
   const buildRequest = (domain: string) => new scope.Request(`${CACHE_URL_PREFIX}${encodeURIComponent(domain)}`);
   return {
-    async get(domain: string) {
+    async get(domain: string, maxAge: number) {
       try {
         const cache = await getCache();
         const request = buildRequest(domain);
@@ -93,10 +123,18 @@ function createBrowserCache(scope: any): ResultCache {
         if (!cachedResponse) {
           return undefined;
         }
-        // Entries written before the TTL existed have no expiry header; treat them as expired too.
-        const expiresAt = Number(cachedResponse.headers.get(CACHE_EXPIRES_HEADER));
-        if (Number.isNaN(expiresAt) || expiresAt <= Date.now()) {
+        // Entries written before the TTL existed have no timestamp headers. Number(null) is 0,
+        // so they read as stored and expired at the epoch and are dropped like any expired entry.
+        const times: CacheEntryTimes = {
+          storedAt: Number(cachedResponse.headers.get(CACHE_STORED_HEADER)),
+          expiresAt: Number(cachedResponse.headers.get(CACHE_EXPIRES_HEADER)),
+        };
+        const now = Date.now();
+        if (Number.isNaN(times.storedAt) || Number.isNaN(times.expiresAt) || times.expiresAt <= now) {
           await cache.delete(request);
+          return undefined;
+        }
+        if (!isFresh(times, maxAge, now)) {
           return undefined;
         }
         const text = await cachedResponse.text();
@@ -109,13 +147,15 @@ function createBrowserCache(scope: any): ResultCache {
         return undefined;
       }
     },
-    async set(domain: string, value: DomainStatus) {
+    async set(domain: string, value: DomainStatus, ttl: number) {
       try {
         const cache = await getCache();
+        const now = Date.now();
         const response = new scope.Response(JSON.stringify(value), {
           headers: {
             'content-type': 'application/json',
-            [CACHE_EXPIRES_HEADER]: String(Date.now() + CACHE_TTL_MS),
+            [CACHE_STORED_HEADER]: String(now),
+            [CACHE_EXPIRES_HEADER]: String(now + ttl),
           },
         });
         await cache.put(buildRequest(domain), response);
@@ -554,9 +594,11 @@ export async function checkParallel(domain: string, opts: CheckOptions = {}): Pr
 export async function check(domain: string, opts: CheckOptions = {}): Promise<DomainStatus> {
   const logger: Pick<Console, 'info' | 'warn' | 'error'> = opts.verbose ? (opts.logger ?? console) : noopLogger;
   const normalized = domain.trim().toLowerCase();
+  const cacheTtl = resolveCacheTtl(opts);
+  // `cache: false` only skips reading: a fresh result is still written so later lookups can use it.
   const cacheEnabled = opts.cache !== false;
   if (cacheEnabled) {
-    const cached = await responseCache.get(normalized);
+    const cached = await responseCache.get(normalized, cacheTtl);
     if (cached && adapterAllowed(cached.resolver, opts)) {
       logger.info(
         `[check] cache hit domain=${normalized} availability=${cached.availability} resolver=${cached.resolver}`,
@@ -569,8 +611,8 @@ export async function check(domain: string, opts: CheckOptions = {}): Promise<Do
   if (isPremiumNgDomain(result.domain)) {
     result.fineStatus = 'premium';
   }
-  if (cacheEnabled && (!result.error || result.error.retryable === false)) {
-    await responseCache.set(normalized, result);
+  if (!result.error || result.error.retryable === false) {
+    await responseCache.set(normalized, result, cacheTtl);
   }
   return result;
 }

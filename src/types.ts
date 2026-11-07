@@ -92,9 +92,16 @@ export interface CheckOptions {
   skip?: string[];
   tldConfig?: TldConfigEntry;
   /**
-   * Enable or disable caching. Caching is enabled by default.
+   * Whether a cached result may be returned. Defaults to `true`. With `false`, the domain is
+   * always looked up fresh, and that fresh result is still written to the cache for later calls.
    */
   cache?: boolean;
+  /**
+   * Cache lifetime in milliseconds. Defaults to 2 hours (7,200,000). A result written by this call
+   * is kept for this long, and a cached result older than this is not returned, even if it was
+   * stored with a longer lifetime. `0` disables serving from the cache; `Infinity` never expires.
+   */
+  cacheTtl?: number;
   /**
    * API keys for third-party services.
    */
